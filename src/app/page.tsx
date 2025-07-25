@@ -10,8 +10,16 @@ interface ClientConfig {
   // Puedes añadir más campos si los tienes en DynamoDB
 }
 
-// La función de la página ahora es asíncrona y recibe searchParams
-export default async function Page({ searchParams }: { searchParams: { clientId?: string } }) {
+// --- CORRECCIÓN AQUÍ ---
+// Se define una interfaz para las props de la página, que es la forma correcta.
+interface PageProps {
+  searchParams: {
+    clientId?: string;
+  };
+}
+
+// La función de la página ahora usa la interfaz PageProps
+export default async function Page({ searchParams }: PageProps) {
     const clientId = searchParams.clientId;
 
     let clientConfig: ClientConfig | null = null;
@@ -20,7 +28,6 @@ export default async function Page({ searchParams }: { searchParams: { clientId?
     if (clientId) {
         try {
             // Buscamos la configuración del cliente en DynamoDB
-            // casteamos la respuesta para asegurar que cumple con la interfaz
             clientConfig = (await getClientConfig(clientId)) as ClientConfig | null;
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
