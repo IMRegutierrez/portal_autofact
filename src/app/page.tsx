@@ -1,243 +1,43 @@
-'use client';
-import Head from 'next/head';
-import { useState, useEffect } from 'react';
-import InvoiceSearchForm from './components/InvoiceSearchForm';
-import InvoiceDetailsDisplay from './components/InvoiceDetailsDisplay';
-import FiscalDataForm from './components/FiscalDataForm';
-import Modal from './components/Modal';
-import Loader from './components/Loader';
+import { getClientConfig } from '../lib/aws-config';
+import PortalClientComponent from './PortalClientComponent'; // Importamos el nuevo componente de cliente
 
-export default function PortalPage() {
-    // Estados para manejar el flujo y los datos
-    const [isLoading, setIsLoading] = useState(false);
-    const [currentInvoiceData, setCurrentInvoiceData] = useState(null); // Datos de la factura encontrada
-    const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
-    const [showFiscalForm, setShowFiscalForm] = useState(false);
-    const [collectedFiscalData, setCollectedFiscalData] = useState(null); // Datos fiscales recolectados del form
+// Esta función se ejecuta en el servidor de AWS
+export default async function Page({ searchParams }) {
+    // Leemos el clientId del parámetro en la URL (ej. ?clientId=clienteprueba)
+    const clientId = searchParams.clientId;
 
-    // Para el modal de notificaciones
-    const [modalMessage, setModalMessage] = useState('');
-    const [showModal, setShowModal] = useState(false);
+    let clientConfig = null;
+    let error = null;
 
-    // Para los enlaces de CFDI generados
-    const [cfdiLinks, setCfdiLinks] = useState({ xmlUrl: null, pdfUrl: null });
-
-    // Simulación de guardado de datos fiscales (en memoria para esta sesión)
-    // Para persistencia real entre sesiones, se usaría localStorage aquí con useEffect.
-    const [mockSavedFiscalData, setMockSavedFiscalData] = useState({});
-
-    const displayModal = (message) => {
-        setModalMessage(message);
-        setShowModal(true);
-    };
-
-    const handleSearchSubmit = async (searchParams) => {
-        setIsLoading(true);
-        setCurrentInvoiceData(null);
-        setShowInvoiceDetails(false);
-        setShowFiscalForm(false);
-        setCfdiLinks({ xmlUrl: null, pdfUrl: null });
-        setCollectedFiscalData(null);
-
-        const searchSuiteletUrl = `https://5652668-sb2.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=854&deploy=1&compid=5652668_SB2&ns-at=AAEJ7tMQlfJnJqdSrSliwWY_p_ZAnEs1-1LVrkuaZ48TO9sY6mI`; // Tu URL del Suitelet de búsqueda
-        const formData = new FormData();
-        formData.append('custpage_invoice_id', searchParams.invoiceOrCustomerId);
-        formData.append('custpage_invoice_total', searchParams.invoiceTotal);
-        formData.append('custpage_action','search');
-
-        console.log("Buscando factura en Netsuite:", { url: searchSuiteletUrl, data: searchParams });
-
+    if (clientId) {
         try {
-            const response = await fetch(searchSuiteletUrl, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: `Error del servidor: ${response.status} ${response.statusText}` }));
-                throw new Error(errorData.message || `Error del servidor: ${response.status}`);
+            // Buscamos la configuración del cliente en DynamoDB
+            clientConfig = await getClientConfig(clientId);
+            if (!clientConfig) {
+                error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
             }
-
-            const data = await response.json();
-            console.log("Respuesta de búsqueda de Netsuite:", data);
-
-            if (data && data.success && data.invoiceData) {
-                // Asegúrate que data.invoiceData contenga internalId, customerId, recordType, y subsidiaryId si aplica
-                setCurrentInvoiceData(data.invoiceData);
-                setShowInvoiceDetails(true);
-            } else {
-                displayModal(data.message || 'Factura no encontrada o datos incorrectos.');
-            }
-        } catch (error) {
-            console.error('Error al llamar al Suitelet de búsqueda:', error);
-            displayModal(`Error al conectar con el servicio de búsqueda: ${error.message}`);
-        } finally {
-            setIsLoading(false);
+        } catch (e) {
+            error = e.message;
         }
-    };
+    } else {
+        error = "Bienvenido. Por favor, accede a través de la URL proporcionada para tu empresa.";
+    }
 
-    const handleConfirmInvoiceDetails = () => {
-        if (!currentInvoiceData) return;
-        setShowFiscalForm(true);
-        // El botón de confirmar detalles se oculta/deshabilita en InvoiceDetailsDisplay si es necesario
-        // o se puede manejar su visibilidad aquí.
-        displayModal("Detalles confirmados. Procede con los datos fiscales.");
-    };
+    // Si hay un error o no se encontró la configuración, mostramos un mensaje.
+    if (error || !clientConfig) {
+        return (
+            <main className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center p-4 text-slate-100">
+                <div className="text-center bg-slate-800 p-10 rounded-xl shadow-2xl">
+                    <h1 className="text-2xl font-bold text-red-500 mb-4">Acceso no Válido</h1>
+                    <p className="text-slate-400">{error}</p>
+                </div>
+            </main>
+        );
+    }
 
-    const handleFiscalDataSubmit = async (fiscalDataFromForm) => {
-        if (!currentInvoiceData || !currentInvoiceData.internalId) {
-            displayModal("Error: No hay una factura activa con ID interno para procesar.");
-            return;
-        }
-        setIsLoading(true);
-        setCfdiLinks({ xmlUrl: null, pdfUrl: null });
-
-        const timbradoSuiteletUrl = `https://5652668-sb2.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=854&deploy=1&compid=5652668_SB2&ns-at=AAEJ7tMQlfJnJqdSrSliwWY_p_ZAnEs1-1LVrkuaZ48TO9sY6mI`; // Tu URL del Suitelet de timbrado
-        const formData = new FormData();
-
-        console.log(currentInvoiceData);
-   
-
-        formData.append('custpage_action','timbrar');
-        formData.append('custpage_invoice_id', currentInvoiceData.internalId);
-        formData.append('custpage_customer_id', currentInvoiceData.customerId); // Asegúrate que esto viene de la búsqueda
-        formData.append('recordType', currentInvoiceData.recordType || 'invoice');
-        if (currentInvoiceData.subsidiaryId) {
-            formData.append('custpage_subsidiary_id', currentInvoiceData.subsidiaryId);
-        }
-        // Datos fiscales del formulario
-        formData.append('custpage_razon_social', fiscalDataFromForm.razonSocial);
-        formData.append('custpage_rfc', fiscalDataFromForm.rfc);
-        formData.append('custpage_email_cfdi', fiscalDataFromForm.emailCfdi);
-        formData.append('custpage_domicilio_fiscal', fiscalDataFromForm.domicilioFiscal);
-        formData.append('custpage_codigo_postal_fiscal', fiscalDataFromForm.codigoPostalFiscal);
-        formData.append('custpage_regimen_fiscal', fiscalDataFromForm.regimenFiscal);
-        formData.append('custpage_uso_cfdi', fiscalDataFromForm.usoCfdi);
-
-        console.log("Enviando para timbrar a Netsuite:", { url: timbradoSuiteletUrl, data: formData });
-
-        try {
-            const response = await fetch(timbradoSuiteletUrl,{
-                method: 'POST',
-                body : formData
-            });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: `Error del servidor de timbrado: ${response.status} ${response.statusText}` }));
-                throw new Error(errorData.message || `Error del servidor de timbrado: ${response.status}`);
-            }
-            const data = await response.json();
-            console.log("Respuesta del Suitelet de timbrado:", data);
-
-            if (data && data.success) {
-                displayModal(data.message || "Proceso de CFDI completado exitosamente.");
-                // Guardar/actualizar en el mock de datos fiscales (para esta sesión)
-                const updatedFiscalData = { ...fiscalDataFromForm, invoiceNumberAssociated: currentInvoiceData.invoiceNumber };
-                setMockSavedFiscalData(prev => ({
-                    ...prev,
-                    [currentInvoiceData.invoiceNumber]: updatedFiscalData
-                }));
-                setCollectedFiscalData(updatedFiscalData);
-
-                // --- CORRECCIÓN AQUÍ ---
-                // Se accede a las URLs dentro de data.invoiceData
-                if (data.invoiceData && (data.invoiceData.xmlUrl || data.invoiceData.pdfUrl)) {
-                    setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
-                }
-
-                // --- CAMBIO AQUÍ: Ocultar formularios después del éxito ---
-                setShowFiscalForm(false);
-                setShowInvoiceDetails(false);
-
-            } else {
-                displayModal(data.message || "Ocurrió un error durante el proceso de CFDI.");
-            }
-        } catch (error) {
-            console.error('Error al llamar al Suitelet de timbrado:', error);
-            displayModal(`Error en la comunicación con el servicio de timbrado: ${error.message}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
+    // Si encontramos la configuración, renderizamos el componente de cliente
+    // y le pasamos la configuración como props.
     return (
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex flex-col items-center justify-center p-4 text-slate-100">
-            <Head>
-                <title>Portal de Autofacturación</title>
-                <meta name="description" content="Portal de Autofacturación e integrado con Netsuite" />
-                <link rel="icon" href="/favicon.ico" /> {/* Asegúrate de tener un favicon */}
-            </Head>
-
-            <div className="w-full max-w-2xl bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10">
-                <header className="text-center mb-8">
-                    <svg className="w-16 h-16 mx-auto mb-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <h1 className="text-3xl font-bold text-sky-400">Portal de Autofacturación</h1>
-                    <p className="text-slate-400 mt-2">Consulta facturas y genera tu CFDI.</p>
-                </header>
-
-                <InvoiceSearchForm onSearch={handleSearchSubmit} isLoading={isLoading} />
-
-                {isLoading && <Loader />}
-
-                {showInvoiceDetails && currentInvoiceData && (
-                    <InvoiceDetailsDisplay
-                        invoiceData={currentInvoiceData}
-                        onConfirmDetails={handleConfirmInvoiceDetails}
-                    />
-                )}
-
-                {showFiscalForm && currentInvoiceData && (
-                    <FiscalDataForm
-                        invoiceNumberForContext={currentInvoiceData.invoiceNumber}
-                        initialData={currentInvoiceData || {}} // Pasa datos guardados o un objeto vacío
-                        onSubmit={handleFiscalDataSubmit}
-                        isLoading={isLoading}
-                    />
-                )}
-
-                {(cfdiLinks.xmlUrl || cfdiLinks.pdfUrl) && !isLoading && (
-                    <div className="mt-8 p-6 bg-slate-700/50 rounded-lg shadow-inner text-center">
-                        <h3 className="text-xl font-semibold text-sky-300 mb-4">CFDI Generado Exitosamente</h3>
-                        <p className="text-slate-400 mb-6">Descarga los archivos de tu factura.</p>
-                        <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            {cfdiLinks.xmlUrl && (
-                                <a 
-                                    href={cfdiLinks.xmlUrl} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 transition-colors"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                                    </svg>
-                                    Descargar XML
-                                </a>
-                            )}
-                            {cfdiLinks.pdfUrl && (
-                                <a 
-                                    href={cfdiLinks.pdfUrl} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Descargar PDF
-                                </a>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-            </div>
-
-            
-            <Modal isOpen={showModal} message={modalMessage} onClose={() => setShowModal(false)} />
-
-            <footer className="text-center mt-12 pb-6">
-                <p className="text-sm text-slate-500">&copy; {new Date().getFullYear()} TuEmpresa S.A. de C.V. Todos los derechos reservados.</p>
-            </footer>
-        </div>
+        <PortalClientComponent config={clientConfig} />
     );
 }
