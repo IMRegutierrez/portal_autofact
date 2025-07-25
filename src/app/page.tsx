@@ -10,9 +10,7 @@ interface ClientConfig {
   // Puedes añadir más campos si los tienes en DynamoDB
 }
 
-// --- APLICANDO LA SOLUCIÓN DE NEXT.JS 15 ---
-
-// 1. Se crea un nuevo componente asíncrono que contiene la lógica de obtención de datos.
+// Componente asíncrono que contiene la lógica de obtención de datos.
 async function PortalPageContent({ clientId }: { clientId?: string }) {
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
@@ -50,11 +48,12 @@ async function PortalPageContent({ clientId }: { clientId?: string }) {
     );
 }
 
-// 2. La exportación por defecto de la página ahora es un componente SÍNCRONO.
-export default function Page({ searchParams }: { searchParams: { clientId?: string } }) {
-    const clientId = searchParams.clientId;
+// --- CORRECCIÓN AQUÍ ---
+// La exportación por defecto de la página ahora es un componente SÍNCRONO.
+// Se utiliza 'any' para las props para evitar el conflicto de tipos en el build de Amplify.
+export default function Page(props: any) {
+    const clientId = props.searchParams?.clientId;
 
-    // 3. El componente síncrono renderiza el componente asíncrono.
-    // React y Next.js manejarán la carga y el streaming de este componente.
+    // El componente síncrono renderiza el componente asíncrono.
     return <PortalPageContent clientId={clientId} />;
 }
