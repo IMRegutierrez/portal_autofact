@@ -1,7 +1,7 @@
 import { getClientConfig } from '../lib/aws-config';
 import PortalClientComponent from './PortalClientComponent';
 
-// Interfaz para definir la estructura de la configuración del cliente
+// ... (tus interfaces ClientConfig y AwsConfig se mantienen igual) ...
 interface ClientConfig {
   clientId: string;
   suiteletUrl: string;
@@ -9,7 +9,6 @@ interface ClientConfig {
   clientName: string;
 }
 
-// Interfaz para que coincida con lo que devuelve process.env
 interface AwsConfig {
     accessKeyId: string | undefined;
     secretAccessKey: string | undefined;
@@ -17,15 +16,16 @@ interface AwsConfig {
     tableName: string | undefined;
 }
 
-// Componente asíncrono que contiene la lógica de obtención de datos.
+
 async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, awsConfig: AwsConfig }) {
+    // ... (el resto de esta función se mantiene igual) ...
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
 
-    if (clientId) {
+    if (!awsConfig.region || !awsConfig.tableName || !awsConfig.accessKeyId || !awsConfig.secretAccessKey) {
+        error = "La configuración del servidor está incompleta. Faltan variables de entorno de AWS.";
+    } else if (clientId) {
         try {
-            // Pasamos la configuración de AWS a la función que consulta DynamoDB.
-            // La validación de la configuración ahora ocurre dentro de getClientConfig.
             clientConfig = (await getClientConfig(clientId, awsConfig)) as ClientConfig | null;
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
@@ -37,7 +37,6 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
         error = "Bienvenido. Por favor, accede a través de la URL proporcionada para tu empresa.";
     }
 
-    // Si hay un error, mostramos un mensaje.
     if (error || !clientConfig) {
         return (
             <main className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center p-4 text-slate-100">
@@ -48,18 +47,19 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
             </main>
         );
     }
-
-    // Si todo está bien, renderizamos el componente de cliente.
     return (
         <PortalClientComponent config={clientConfig} />
     );
 }
 
-// La exportación por defecto de la página (Componente Síncrono)
 export default function Page(props: any) {
+    // --- PASO DE DIAGNÓSTICO AQUÍ ---
+    // Imprimimos todas las variables de entorno disponibles en el servidor.
+    // Esto aparecerá en los logs de CloudWatch de tu aplicación.
+    console.log("Variables de entorno disponibles en el servidor:", process.env);
+
     const clientId = props.searchParams?.clientId;
 
-    // Leemos las variables de entorno.
     const awsConfig: AwsConfig = {
         accessKeyId: process.env.PFACT_AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.PFACT_AWS_SECRET_ACCESS_KEY,
@@ -67,6 +67,5 @@ export default function Page(props: any) {
         tableName: process.env.PFACT_DYNAMODB_TABLE_NAME,
     };
 
-    // Renderizamos el componente asíncrono, pasándole la configuración.
     return <PortalPageContent clientId={clientId} awsConfig={awsConfig} />;
 }
