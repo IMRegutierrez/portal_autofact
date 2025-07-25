@@ -12,10 +12,10 @@ interface ClientConfig {
 
 // Interfaz para las credenciales y configuración de AWS
 interface AwsConfig {
-    accessKeyId: string | undefined;
-    secretAccessKey: string | undefined;
-    region: string | undefined;
-    tableName: string | undefined;
+    accessKeyId: string | 'undefined';
+    secretAccessKey: string | 'undefined';
+    region: string | 'undefined';
+    tableName: string | 'undefined';
 }
 
 // Componente asíncrono que contiene la lógica de obtención de datos.
