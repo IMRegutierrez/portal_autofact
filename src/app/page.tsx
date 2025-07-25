@@ -1,23 +1,32 @@
 import { getClientConfig } from '../lib/aws-config';
-import PortalClientComponent from './PortalClientComponent'; // Importamos el nuevo componente de cliente
+import PortalClientComponent from './PortalClientComponent';
 
-// Esta función se ejecuta en el servidor de AWS
-export default async function Page({ searchParams }) {
-    // Leemos el clientId del parámetro en la URL (ej. ?clientId=clienteprueba)
+// Interfaz para definir la estructura de la configuración del cliente
+interface ClientConfig {
+  clientId: string;
+  suiteletUrl: string;
+  netsuiteCompId: string;
+  clientName: string;
+  // Puedes añadir más campos si los tienes en DynamoDB
+}
+
+// La función de la página ahora es asíncrona y recibe searchParams
+export default async function Page({ searchParams }: { searchParams: { clientId?: string } }) {
     const clientId = searchParams.clientId;
 
-    let clientConfig = null;
-    let error = null;
+    let clientConfig: ClientConfig | null = null;
+    let error: string | null = null;
 
     if (clientId) {
         try {
             // Buscamos la configuración del cliente en DynamoDB
-            clientConfig = await getClientConfig(clientId);
+            // casteamos la respuesta para asegurar que cumple con la interfaz
+            clientConfig = (await getClientConfig(clientId)) as ClientConfig | null;
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
             }
-        } catch (e) {
-            error = e.message;
+        } catch (e: any) {
+            error = e.message || "Error al conectar con el servicio de configuración.";
         }
     } else {
         error = "Bienvenido. Por favor, accede a través de la URL proporcionada para tu empresa.";
