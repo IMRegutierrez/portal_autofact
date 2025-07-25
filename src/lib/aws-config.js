@@ -24,7 +24,7 @@ export async function getClientConfig(clientId, awsConfig) {
     // Si alguna falta, se lanza un error que será capturado en page.tsx.
     if (!region || !tableName || !accessKeyId || !secretAccessKey) {
         console.error("Error: Faltan variables de entorno de AWS en la configuración del servidor.");
-        throw new Error("La configuración del servidor está incompleta.");
+        throw new Error("La configuración del servidor está incompleta." + accessKeyId + secretAccessKey + region + tableName);
     }
 
     // Ahora que sabemos que las variables existen, podemos usarlas de forma segura.
