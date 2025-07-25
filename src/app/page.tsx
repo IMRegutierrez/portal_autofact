@@ -11,17 +11,17 @@ interface ClientConfig {
 }
 
 // --- CORRECCIÓN AQUÍ ---
-// Se utiliza una definición de props más completa que incluye 'params' y 'searchParams',
-// lo cual es el estándar para las páginas en el App Router de Next.js.
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { slug: string }; // Se incluye 'params' aunque no se use en esta página.
+// Se define una interfaz completa para las props de la página.
+// Luego, la función Page recibe un solo objeto 'props' de este tipo.
+interface PageProps {
+  params: { slug: string };
   searchParams: { [key: string]: string | string[] | undefined };
-}) {
-    // Se extrae clientId de searchParams de forma segura.
-    const clientId = searchParams?.clientId as string | undefined;
+}
+
+// La función de la página ahora usa la interfaz PageProps y recibe el objeto 'props' completo.
+export default async function Page(props: PageProps) {
+    // Se extrae clientId de props.searchParams de forma segura.
+    const clientId = props.searchParams?.clientId as string | undefined;
 
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
