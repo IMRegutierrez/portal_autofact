@@ -1,13 +1,25 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 
-// Configura el cliente de DynamoDB.
-// Las credenciales (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) y la región (AWS_REGION)
-// se tomarán automáticamente de las variables de entorno de Amplify.
-const client = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(client);
+// --- CAMBIO AQUÍ ---
+// Leemos explícitamente tus variables de entorno con prefijo personalizado.
+const credentials = {
+    accessKeyId: process.env.PFACT_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.PFACT_AWS_SECRET_ACCESS_KEY,
+};
 
-const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'PortalClientesConfig';
+const region = process.env.PFACT_AWS_REGION;
+const tableName = process.env.PFACT_DYNAMODB_TABLE_NAME || 'PortalClientesConfig';
+
+
+// Se configura el cliente de DynamoDB, pasándole explícitamente las credenciales y la región.
+// Se añade una comprobación para asegurar que las variables existen.
+const client = new DynamoDBClient({
+    region: region,
+    credentials: (credentials.accessKeyId && credentials.secretAccessKey) ? credentials : undefined,
+});
+
+const docClient = DynamoDBDocumentClient.from(client);
 
 /**
  * Obtiene la configuración de un cliente desde la tabla de DynamoDB.
@@ -20,10 +32,16 @@ export async function getClientConfig(clientId) {
         return null;
     }
 
-    console.log(`Buscando configuración para el cliente: ${clientId} en la tabla: ${TABLE_NAME}`);
+    // Comprobación adicional para asegurar que las variables de entorno están cargadas.
+    if (!region || !credentials.accessKeyId || !credentials.secretAccessKey) {
+        console.error("Error: Faltan variables de entorno de AWS en la configuración del servidor.");
+        throw new Error("La configuración del servidor está incompleta.");
+    }
+
+    console.log(`Buscando configuración para el cliente: ${clientId} en la tabla: ${tableName}`);
 
     const command = new GetCommand({
-        TableName: TABLE_NAME,
+        TableName: tableName,
         Key: {
             clientId: clientId,
         },
@@ -40,7 +58,6 @@ export async function getClientConfig(clientId) {
         }
     } catch (error) {
         console.error("Error al obtener datos de DynamoDB:", error);
-        // Lanza el error para que el componente de servidor pueda manejarlo.
         throw new Error("No se pudo conectar con el servicio de configuración.");
     }
 }
