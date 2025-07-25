@@ -35,7 +35,7 @@ export async function getClientConfig(clientId) {
     // Comprobación adicional para asegurar que las variables de entorno están cargadas.
     if (!region || !credentials.accessKeyId || !credentials.secretAccessKey) {
         console.error("Error: Faltan variables de entorno de AWS en la configuración del servidor.");
-        throw new Error("La configuración del servidor está incompleta.");
+        throw new Error("La configuración del servidor está incompleta." + region + " " + credentials.accessKeyId + " " + credentials.secretAccessKey);
     }
 
     console.log(`Buscando configuración para el cliente: ${clientId} en la tabla: ${tableName}`);
