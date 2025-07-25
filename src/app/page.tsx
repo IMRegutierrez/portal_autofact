@@ -7,15 +7,9 @@ interface ClientConfig {
   suiteletUrl: string;
   netsuiteCompId: string;
   clientName: string;
-  // Puedes añadir más campos si los tienes en DynamoDB
-
-
-  
 }
 
-// --- CORRECCIÓN AQUÍ ---
-// Se ajusta la interfaz para que acepte 'string | undefined', que es el tipo
-// que realmente devuelve process.env.
+// Interfaz para que coincida con lo que devuelve process.env
 interface AwsConfig {
     accessKeyId: string | undefined;
     secretAccessKey: string | undefined;
@@ -28,12 +22,10 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
 
-    // Primero, validamos que la configuración de AWS esté presente.
-    if (!awsConfig.region || !awsConfig.tableName || !awsConfig.accessKeyId || !awsConfig.secretAccessKey) {
-        error = "La configuración del servidor está incompleta. Faltan variables de entorno de AWS.";
-    } else if (clientId) {
+    if (clientId) {
         try {
-            // Pasamos la configuración de AWS a la función que consulta DynamoDB
+            // Pasamos la configuración de AWS a la función que consulta DynamoDB.
+            // La validación de la configuración ahora ocurre dentro de getClientConfig.
             clientConfig = (await getClientConfig(clientId, awsConfig)) as ClientConfig | null;
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
@@ -67,7 +59,7 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
 export default function Page(props: any) {
     const clientId = props.searchParams?.clientId;
 
-    // Leemos las variables de entorno en el nivel más alto (el Componente de Servidor).
+    // Leemos las variables de entorno.
     const awsConfig: AwsConfig = {
         accessKeyId: process.env.PFACT_AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.PFACT_AWS_SECRET_ACCESS_KEY,
