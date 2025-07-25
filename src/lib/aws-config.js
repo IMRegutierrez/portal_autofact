@@ -7,7 +7,7 @@ import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = process.env.PFACT_DYNAMODB_TABLE_NAME || 'PortalClientesConfig';
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'PortalClientesConfig';
 
 /**
  * Obtiene la configuración de un cliente desde la tabla de DynamoDB.
