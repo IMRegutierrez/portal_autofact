@@ -10,12 +10,14 @@ interface ClientConfig {
   // Puedes añadir más campos si los tienes en DynamoDB
 }
 
-// Interfaz para las credenciales y configuración de AWS
+// --- CORRECCIÓN AQUÍ ---
+// Se ajusta la interfaz para que acepte 'string | undefined', que es el tipo
+// que realmente devuelve process.env.
 interface AwsConfig {
-    accessKeyId: string | 'undefined';
-    secretAccessKey: string | 'undefined';
-    region: string | 'undefined';
-    tableName: string | 'undefined';
+    accessKeyId: string | undefined;
+    secretAccessKey: string | undefined;
+    region: string | undefined;
+    tableName: string | undefined;
 }
 
 // Componente asíncrono que contiene la lógica de obtención de datos.
