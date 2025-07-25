@@ -8,6 +8,9 @@ interface ClientConfig {
   netsuiteCompId: string;
   clientName: string;
   // Puedes añadir más campos si los tienes en DynamoDB
+
+
+  
 }
 
 // --- CORRECCIÓN AQUÍ ---
