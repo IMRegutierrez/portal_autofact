@@ -11,15 +11,17 @@ interface ClientConfig {
 }
 
 // --- CORRECCIÓN AQUÍ ---
-// Se utiliza la forma de tipado recomendada por Next.js para las props de la página,
-// definiendo el tipo de 'searchParams' de manera genérica para evitar conflictos.
+// Se utiliza una definición de props más completa que incluye 'params' y 'searchParams',
+// lo cual es el estándar para las páginas en el App Router de Next.js.
 export default async function Page({
+  params,
   searchParams,
 }: {
+  params: { slug: string }; // Se incluye 'params' aunque no se use en esta página.
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-    // Extraemos clientId y lo casteamos a string para nuestro uso.
-    const clientId = searchParams.clientId as string | undefined;
+    // Se extrae clientId de searchParams de forma segura.
+    const clientId = searchParams?.clientId as string | undefined;
 
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
