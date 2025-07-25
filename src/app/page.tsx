@@ -11,16 +11,15 @@ interface ClientConfig {
 }
 
 // --- CORRECCIÓN AQUÍ ---
-// Se define una interfaz para las props de la página, que es la forma correcta.
-interface PageProps {
-  searchParams: {
-    clientId?: string;
-  };
-}
-
-// La función de la página ahora usa la interfaz PageProps
-export default async function Page({ searchParams }: PageProps) {
-    const clientId = searchParams.clientId;
+// Se utiliza la forma de tipado recomendada por Next.js para las props de la página,
+// definiendo el tipo de 'searchParams' de manera genérica para evitar conflictos.
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+    // Extraemos clientId y lo casteamos a string para nuestro uso.
+    const clientId = searchParams.clientId as string | undefined;
 
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
