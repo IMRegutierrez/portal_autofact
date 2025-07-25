@@ -10,19 +10,10 @@ interface ClientConfig {
   // Puedes añadir más campos si los tienes en DynamoDB
 }
 
-// --- CORRECCIÓN AQUÍ ---
-// Se define una interfaz completa para las props de la página.
-// Luego, la función Page recibe un solo objeto 'props' de este tipo.
-interface PageProps {
-  params: { slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+// --- APLICANDO LA SOLUCIÓN DE NEXT.JS 15 ---
 
-// La función de la página ahora usa la interfaz PageProps y recibe el objeto 'props' completo.
-export default async function Page(props: PageProps) {
-    // Se extrae clientId de props.searchParams de forma segura.
-    const clientId = props.searchParams?.clientId as string | undefined;
-
+// 1. Se crea un nuevo componente asíncrono que contiene la lógica de obtención de datos.
+async function PortalPageContent({ clientId }: { clientId?: string }) {
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
 
@@ -57,4 +48,13 @@ export default async function Page(props: PageProps) {
     return (
         <PortalClientComponent config={clientConfig} />
     );
+}
+
+// 2. La exportación por defecto de la página ahora es un componente SÍNCRONO.
+export default function Page({ searchParams }: { searchParams: { clientId?: string } }) {
+    const clientId = searchParams.clientId;
+
+    // 3. El componente síncrono renderiza el componente asíncrono.
+    // React y Next.js manejarán la carga y el streaming de este componente.
+    return <PortalPageContent clientId={clientId} />;
 }
