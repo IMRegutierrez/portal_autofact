@@ -20,11 +20,19 @@ export async function getClientConfig(clientId, awsConfig) {
     const { accessKeyId, secretAccessKey, region, tableName } = awsConfig;
 
     // --- CORRECCIÓN AQUÍ ---
-    // Se valida que las variables de entorno existan ANTES de intentar usarlas.
-    // Si alguna falta, se lanza un error que será capturado en page.tsx.
-    if (!region || !tableName || !accessKeyId || !secretAccessKey) {
-        console.error("Error: Faltan variables de entorno de AWS en la configuración del servidor.");
-        throw new Error("La configuración del servidor está incompleta." + accessKeyId + secretAccessKey + region + tableName);
+    // Se valida cada variable de entorno individualmente para un diagnóstico preciso.
+    // Si alguna falta, se lanza un error específico que será capturado en page.tsx.
+    if (!region) {
+        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_REGION falta o está vacía.");
+    }
+    if (!tableName) {
+        throw new Error("La configuración del servidor está incompleta: La variable PFACT_DYNAMODB_TABLE_NAME falta o está vacía.");
+    }
+    if (!accessKeyId) {
+        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_ACCESS_KEY_ID falta o está vacía.");
+    }
+    if (!secretAccessKey) {
+        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_SECRET_ACCESS_KEY falta o está vacía.");
     }
 
     // Ahora que sabemos que las variables existen, podemos usarlas de forma segura.
