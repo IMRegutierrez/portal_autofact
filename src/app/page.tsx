@@ -18,7 +18,6 @@ interface AwsConfig {
 
 
 
-
 async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, awsConfig: AwsConfig }) {
     // ... (el resto de esta función se mantiene igual) ...
     let clientConfig: ClientConfig | null = null;
