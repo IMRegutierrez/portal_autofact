@@ -1,7 +1,7 @@
 import { getClientConfig } from '../lib/aws-config';
 import PortalClientComponent from './PortalClientComponent';
 
-// ... (tus interfaces ClientConfig y AwsConfig se mantienen igual) ...
+// Interfaz para definir la estructura de la configuración del cliente
 interface ClientConfig {
   clientId: string;
   suiteletUrl: string;
@@ -9,23 +9,18 @@ interface ClientConfig {
   clientName: string;
 }
 
+// Interfaz para la configuración de AWS (con nombres simplificados)
 interface AwsConfig {
-    accessKeyId: string | undefined;
-    secretAccessKey: string | undefined;
     region: string | undefined;
     tableName: string | undefined;
 }
 
-
-
+// Componente asíncrono que contiene la lógica de obtención de datos.
 async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, awsConfig: AwsConfig }) {
-    // ... (el resto de esta función se mantiene igual) ...
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
 
-    if (!awsConfig.region || !awsConfig.tableName || !awsConfig.accessKeyId || !awsConfig.secretAccessKey) {
-        error = "La configuración del servidor está incompleta. Faltan variables de entorno de AWS.";
-    } else if (clientId) {
+    if (clientId) {
         try {
             clientConfig = (await getClientConfig(clientId, awsConfig)) as ClientConfig | null;
             if (!clientConfig) {
@@ -48,25 +43,23 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
             </main>
         );
     }
+
     return (
         <PortalClientComponent config={clientConfig} />
     );
 }
 
+// La exportación por defecto de la página (Componente Síncrono)
 export default function Page(props: any) {
-    // --- PASO DE DIAGNÓSTICO AQUÍ ---
-    // Imprimimos todas las variables de entorno disponibles en el servidor.
-    // Esto aparecerá en los logs de CloudWatch de tu aplicación.
-    console.log("Variables de entorno disponibles en el servidor:", process.env);
-
     const clientId = props.searchParams?.clientId;
 
+    // --- CAMBIO AQUÍ ---
+    // Leemos las variables de entorno con los nuevos nombres simplificados.
     const awsConfig: AwsConfig = {
-        accessKeyId: process.env.PFACT_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.PFACT_AWS_SECRET_ACCESS_KEY,
-        region: process.env.PFACT_AWS_REGION,
-        tableName: process.env.PFACT_DYNAMODB_TABLE_NAME,
+        region: process.env.PORTAL_REGION,
+        tableName: process.env.PORTAL_TABLE_NAME,
     };
 
+    // Renderizamos el componente asíncrono, pasándole la configuración.
     return <PortalPageContent clientId={clientId} awsConfig={awsConfig} />;
 }

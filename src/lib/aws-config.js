@@ -5,8 +5,8 @@ import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
  * Obtiene la configuración de un cliente desde la tabla de DynamoDB.
  * @param {string} clientId - El ID del cliente (leído desde la URL).
  * @param {object} awsConfig - Un objeto con la configuración de AWS (región y nombre de la tabla).
- * @param {string | undefined} awsConfig.region
- * @param {string | undefined} awsConfig.tableName
+ * @param {string | undefined} awsConfig.region - La región de AWS (ej. 'us-east-1').
+ * @param {string | undefined} awsConfig.tableName - El nombre de la tabla de DynamoDB.
  * @returns {Promise<Object|null>} - Un objeto con la configuración del cliente o null si no se encuentra.
  */
 export async function getClientConfig(clientId, awsConfig) {
@@ -17,14 +17,16 @@ export async function getClientConfig(clientId, awsConfig) {
 
     const { region, tableName } = awsConfig;
 
-    if (!region || !tableName) {
-        console.error("Error: Faltan las variables de entorno PFACT_AWS_REGION o PFACT_DYNAMODB_TABLE_NAME.");
-        throw new Error("La configuración del servidor está incompleta.");
+    // Se valida que las variables de entorno (ahora con nombres simples) existan.
+    if (!region) {
+        throw new Error("La configuración del servidor está incompleta: La variable PORTAL_REGION falta o está vacía.");
+    }
+    if (!tableName) {
+        throw new Error("La configuración del servidor está incompleta: La variable PORTAL_TABLE_NAME falta o está vacía.");
     }
 
-    // --- CORRECCIÓN AQUÍ ---
-    // Se elimina el objeto 'credentials'. El SDK de AWS, al ejecutarse en un entorno
-    // de AWS como Amplify, buscará y usará automáticamente los permisos del Rol de IAM asociado.
+    // El SDK de AWS, al ejecutarse en un entorno de AWS como Amplify,
+    // buscará y usará automáticamente los permisos del Rol de IAM asociado para las credenciales.
     const client = new DynamoDBClient({
         region: region,
     });
