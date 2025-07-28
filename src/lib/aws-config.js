@@ -4,9 +4,7 @@ import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 /**
  * Obtiene la configuración de un cliente desde la tabla de DynamoDB.
  * @param {string} clientId - El ID del cliente (leído desde la URL).
- * @param {object} awsConfig - Un objeto con las credenciales y configuración de AWS.
- * @param {string | undefined} awsConfig.accessKeyId
- * @param {string | undefined} awsConfig.secretAccessKey
+ * @param {object} awsConfig - Un objeto con la configuración de AWS (región y nombre de la tabla).
  * @param {string | undefined} awsConfig.region
  * @param {string | undefined} awsConfig.tableName
  * @returns {Promise<Object|null>} - Un objeto con la configuración del cliente o null si no se encuentra.
@@ -17,31 +15,18 @@ export async function getClientConfig(clientId, awsConfig) {
         return null;
     }
 
-    const { accessKeyId, secretAccessKey, region, tableName } = awsConfig;
+    const { region, tableName } = awsConfig;
+
+    if (!region || !tableName) {
+        console.error("Error: Faltan las variables de entorno PFACT_AWS_REGION o PFACT_DYNAMODB_TABLE_NAME.");
+        throw new Error("La configuración del servidor está incompleta.");
+    }
 
     // --- CORRECCIÓN AQUÍ ---
-    // Se valida cada variable de entorno individualmente para un diagnóstico preciso.
-    // Si alguna falta, se lanza un error específico que será capturado en page.tsx.
-    if (!region) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_REGION falta o está vacía.");
-    }
-    if (!tableName) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_DYNAMODB_TABLE_NAME falta o está vacía.");
-    }
-    if (!accessKeyId) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_ACCESS_KEY_ID falta o está vacía.");
-    }
-    if (!secretAccessKey) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_SECRET_ACCESS_KEY falta o está vacía.");
-    }
-
-    // Ahora que sabemos que las variables existen, podemos usarlas de forma segura.
+    // Se elimina el objeto 'credentials'. El SDK de AWS, al ejecutarse en un entorno
+    // de AWS como Amplify, buscará y usará automáticamente los permisos del Rol de IAM asociado.
     const client = new DynamoDBClient({
         region: region,
-        credentials: {
-            accessKeyId: accessKeyId,
-            secretAccessKey: secretAccessKey,
-        },
     });
 
     const docClient = DynamoDBDocumentClient.from(client);
@@ -66,6 +51,7 @@ export async function getClientConfig(clientId, awsConfig) {
         }
     } catch (error) {
         console.error("Error al obtener datos de DynamoDB:", error);
-        throw new Error("No se pudo conectar con el servicio de configuración. Verifique los permisos y las credenciales.");
+        // Si este error ocurre ahora, es casi seguro un problema de permisos en el Rol de IAM.
+        throw new Error("No se pudo conectar con el servicio de configuración. Verifique los permisos del Rol de IAM.");
     }
 }
