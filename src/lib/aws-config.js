@@ -16,7 +16,6 @@ export async function getClientConfig(clientId, awsConfig) {
         console.log("No se proporcionó clientId.");
         return null;
     }
-    
 
     const { accessKeyId, secretAccessKey, region, tableName } = awsConfig;
 
