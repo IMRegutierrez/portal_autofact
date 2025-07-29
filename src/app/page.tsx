@@ -11,6 +11,8 @@ interface ClientConfig {
 
 // Interfaz para la configuración de AWS
 interface AwsConfig {
+    accessKeyId: string | undefined;
+    secretAccessKey: string | undefined;
     region: string | undefined;
     tableName: string | undefined;
 }
@@ -19,8 +21,10 @@ interface AwsConfig {
 export default async function Page(props: any) {
     const clientId = props.searchParams?.clientId;
 
-    // Leemos las variables de entorno directamente aquí.
+    // Leemos las variables de entorno con los nombres simplificados.
     const awsConfig: AwsConfig = {
+        accessKeyId: process.env.PORTAL_ACCESS_KEY_ID,
+        secretAccessKey: process.env.PORTAL_SECRET_ACCESS_KEY,
         region: process.env.PORTAL_REGION,
         tableName: process.env.PORTAL_TABLE_NAME,
     };
