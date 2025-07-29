@@ -9,17 +9,18 @@ interface ClientConfig {
   clientName: string;
 }
 
-// Componente asíncrono que ahora llama a nuestra API interna
-async function PortalPageContent({ clientId }: { clientId?: string }) {
+// --- CORRECCIÓN AQUÍ ---
+// La exportación por defecto de la página ahora es un único componente ASÍNCRONO.
+export default async function Page(props: any) {
+    const clientId = props.searchParams?.clientId;
+
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
 
     if (clientId) {
         try {
-            // --- CORRECCIÓN AQUÍ ---
-            // Se usan los headers de la petición para construir la URL base de forma segura.
-            // Esto funciona tanto en localhost como en el entorno de despliegue de Amplify.
-            const requestHeaders = headers();
+            // Se usa 'await' para resolver la promesa que TypeScript cree que devuelve headers().
+            const requestHeaders = await headers();
             const host = requestHeaders.get('host');
             const protocol = host?.startsWith('localhost') ? 'http' : 'https';
             const appUrl = `${protocol}://${host}`;
@@ -28,15 +29,12 @@ async function PortalPageContent({ clientId }: { clientId?: string }) {
             
             console.log(`Llamando a la API interna: ${apiUrl}`);
 
-            // Hacemos un fetch a nuestro propio Route Handler
-            // 'no-store' es crucial para asegurar que los datos se obtienen en cada petición y no se cachean.
             const response = await fetch(apiUrl, { cache: 'no-store' }); 
             const data = await response.json();
 
             if (response.ok && data.success) {
                 clientConfig = data.config;
             } else {
-                // Si la respuesta no es ok o success es false, usamos el mensaje de la API
                 error = data.message || "La respuesta de la API de configuración no fue exitosa.";
             }
         } catch (e: any) {
@@ -63,10 +61,4 @@ async function PortalPageContent({ clientId }: { clientId?: string }) {
     return (
         <PortalClientComponent config={clientConfig} />
     );
-}
-
-// La exportación por defecto de la página sigue siendo un componente SÍNCRONO
-export default function Page(props: any) {
-    const clientId = props.searchParams?.clientId;
-    return <PortalPageContent clientId={clientId} />;
 }
