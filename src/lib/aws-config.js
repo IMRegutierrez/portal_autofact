@@ -5,8 +5,8 @@ import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
  * Obtiene la configuración de un cliente desde la tabla de DynamoDB.
  * @param {string} clientId - El ID del cliente (leído desde la URL).
  * @param {object} awsConfig - Un objeto con la configuración de AWS (región y nombre de la tabla).
- * @param {string | undefined} awsConfig.region - La región de AWS (ej. 'us-east-1').
- * @param {string | undefined} awsConfig.tableName - El nombre de la tabla de DynamoDB.
+ * @param {string | undefined} awsConfig.region
+ * @param {string | undefined} awsConfig.tableName
  * @returns {Promise<Object|null>} - Un objeto con la configuración del cliente o null si no se encuentra.
  */
 export async function getClientConfig(clientId, awsConfig) {
@@ -17,7 +17,6 @@ export async function getClientConfig(clientId, awsConfig) {
 
     const { region, tableName } = awsConfig;
 
-    // Se valida que las variables de entorno (ahora con nombres simples) existan.
     if (!region) {
         throw new Error("La configuración del servidor está incompleta: La variable PORTAL_REGION falta o está vacía.");
     }
@@ -54,6 +53,6 @@ export async function getClientConfig(clientId, awsConfig) {
     } catch (error) {
         console.error("Error al obtener datos de DynamoDB:", error);
         // Si este error ocurre ahora, es casi seguro un problema de permisos en el Rol de IAM.
-        throw new Error("No se pudo conectar con el servicio de configuración. Verifique los permisos del Rol de IAM." + error);
+        throw new Error("No se pudo conectar con el servicio de configuración. Verifique los permisos del Rol de IAM.");
     }
 }
