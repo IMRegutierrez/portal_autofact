@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import PortalClientComponent from './PortalClientComponent';
 
 // Interfaz para definir la estructura de la configuración del cliente
@@ -15,9 +16,14 @@ async function PortalPageContent({ clientId }: { clientId?: string }) {
 
     if (clientId) {
         try {
-            // Obtenemos la URL base de la aplicación desde las variables de entorno de Amplify/Vercel
-            // NEXT_PUBLIC_URL es una variable que puedes definir tú mismo en Amplify si es necesario.
-            const appUrl = process.env.NEXT_PUBLIC_URL || process.env.AMPLIFY_DEFAULT_DOMAIN || `https://${process.env.AWS_BRANCH}.amplifyapp.com` || 'http://localhost:3000';
+            // --- CORRECCIÓN AQUÍ ---
+            // Se usan los headers de la petición para construir la URL base de forma segura.
+            // Esto funciona tanto en localhost como en el entorno de despliegue de Amplify.
+            const requestHeaders = headers();
+            const host = requestHeaders.get('host');
+            const protocol = host?.startsWith('localhost') ? 'http' : 'https';
+            const appUrl = `${protocol}://${host}`;
+
             const apiUrl = `${appUrl}/api/config?clientId=${clientId}`;
             
             console.log(`Llamando a la API interna: ${apiUrl}`);
