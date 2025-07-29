@@ -54,6 +54,6 @@ export async function getClientConfig(clientId, awsConfig) {
     } catch (error) {
         console.error("Error al obtener datos de DynamoDB:", error);
         // Si este error ocurre ahora, es casi seguro un problema de permisos en el Rol de IAM.
-        throw new Error("No se pudo conectar con el servicio de configuración. Verifique los permisos del Rol de IAM.");
+        throw new Error("No se pudo conectar con el servicio de configuración. Verifique los permisos del Rol de IAM." + error);
     }
 }

@@ -27,7 +27,7 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
             }
         } catch (e: any) {
-            error = e.message || "Error al conectar con el servicio de configuración." + clientConfig;
+            error = e.message || "Error al conectar con el servicio de configuración.";
         }
     } else {
         error = "Bienvenido. Por favor, accede a través de la URL proporcionada para tu empresa.";
