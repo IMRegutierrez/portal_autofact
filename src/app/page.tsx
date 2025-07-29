@@ -1,3 +1,4 @@
+import getConfig from 'next/config';
 import { getClientConfig } from '../lib/aws-config';
 import PortalClientComponent from './PortalClientComponent';
 
@@ -21,12 +22,14 @@ interface AwsConfig {
 export default async function Page(props: any) {
     const clientId = props.searchParams?.clientId;
 
-    // Leemos las variables de entorno con los nombres simplificados.
+    // Se obtiene la configuración desde serverRuntimeConfig en next.config.js
+    const { serverRuntimeConfig } = getConfig();
+
     const awsConfig: AwsConfig = {
-        accessKeyId: process.env.PORTAL_ACCESS_KEY_ID,
-        secretAccessKey: process.env.PORTAL_SECRET_ACCESS_KEY,
-        region: process.env.PORTAL_REGION,
-        tableName: process.env.PORTAL_TABLE_NAME,
+        accessKeyId: serverRuntimeConfig.PORTAL_ACCESS_KEY_ID,
+        secretAccessKey: serverRuntimeConfig.PORTAL_SECRET_ACCESS_KEY,
+        region: serverRuntimeConfig.PORTAL_REGION,
+        tableName: serverRuntimeConfig.PORTAL_TABLE_NAME,
     };
 
     let clientConfig: ClientConfig | null = null;
