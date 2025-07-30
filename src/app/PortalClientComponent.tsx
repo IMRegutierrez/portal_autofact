@@ -73,7 +73,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         };
 
         try {
-            const response = await fetch(config.suiteletUrl, {
+            const response = await fetch('https://5652668-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1231&deploy=1&compid=5652668_SB1&ns-at=AAEJ7tMQM5EQnQigWKMy4q0uGX_ACNza20sqLepximEtgy4Soi0', {
                 method: 'POST',
                 // --- CAMBIO AQUÍ: Se envían los datos como JSON ---
                 headers: {
@@ -127,7 +127,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         };
 
         try {
-            const response = await fetch(config.suiteletUrl,{
+            const response = await fetch('https://5652668-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1231&deploy=1&compid=5652668_SB1&ns-at=AAEJ7tMQM5EQnQigWKMy4q0uGX_ACNza20sqLepximEtgy4Soi0',{
                 method: 'POST',
                 // --- CAMBIO AQUÍ: Se envían los datos como JSON ---
                 headers: {
