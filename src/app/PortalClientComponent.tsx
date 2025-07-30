@@ -73,7 +73,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         };
 
         try {
-            const response = await fetch('https://tstdrv904452.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=3784&deploy=1&compid=TSTDRV904452&ns-at=AAEJ7tMQ8iLiHk9OmEPOesQHswGMo9LkO58e6i9p0NggMYMjV7o', {
+            const response = await fetch('https://5652668-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1231&deploy=1&compid=5652668_SB1&ns-at=AAEJ7tMQM5EQnQigWKMy4q0uGX_ACNza20sqLepximEtgy4Soi0', {
                 method: 'POST',
                 // --- CAMBIO AQUÍ: Se envían los datos como JSON ---
                 headers: {
