@@ -108,7 +108,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
 
         // --- CORRECCIÓN: Volvemos a usar FormData ---
         const formData = new FormData();
-        formData.append('action', 'timbrar');
+        formData.append('custpage_action', 'timbrar');
         formData.append('custpage_invoice_id', currentInvoiceData.internalId);
         formData.append('custpage_customer_id', currentInvoiceData.customerId);
         formData.append('recordType', currentInvoiceData.recordType || 'invoice');
