@@ -130,8 +130,8 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 body: formData
             });
             if (!response.ok) throw new Error(`Error del servidor de timbrado: ${response.status}`);
+            console.log('Response from NS:',response);
             const data = await response.json();
-            console.log(data);
             if (data && data.success) {
                 displayModal(data.message || "Proceso de CFDI completado.");
                 if (data.invoiceData && (data.invoiceData.xmlUrl || data.invoiceData.pdfUrl)) {
