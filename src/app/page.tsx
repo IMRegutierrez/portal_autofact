@@ -1,6 +1,10 @@
-import getConfig from 'next/config';
 import { getClientConfig } from '../lib/aws-config';
 import PortalClientComponent from './PortalClientComponent';
+
+// --- SOLUCIÓN AQUÍ ---
+// Esta línea le dice a Next.js que esta página debe ser renderizada dinámicamente
+// en cada petición, deshabilitando la caché de datos.
+export const dynamic = 'force-dynamic';
 
 // Interfaz para definir la estructura de la configuración del cliente
 interface ClientConfig {
@@ -22,14 +26,12 @@ interface AwsConfig {
 export default async function Page(props: any) {
     const clientId = props.searchParams?.clientId;
 
-    // Se obtiene la configuración desde serverRuntimeConfig en next.config.js
-    const { serverRuntimeConfig } = getConfig();
-
+    // Leemos las variables de entorno.
     const awsConfig: AwsConfig = {
-        accessKeyId: serverRuntimeConfig.PORTAL_ACCESS_KEY_ID,
-        secretAccessKey: serverRuntimeConfig.PORTAL_SECRET_ACCESS_KEY,
-        region: serverRuntimeConfig.PORTAL_REGION,
-        tableName: serverRuntimeConfig.PORTAL_TABLE_NAME,
+        accessKeyId: process.env.PORTAL_ACCESS_KEY_ID,
+        secretAccessKey: process.env.PORTAL_SECRET_ACCESS_KEY,
+        region: process.env.PORTAL_REGION,
+        tableName: process.env.PORTAL_TABLE_NAME,
     };
 
     let clientConfig: ClientConfig | null = null;
