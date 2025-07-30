@@ -65,21 +65,17 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setShowFiscalForm(false);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
 
-        // --- CAMBIO AQUÍ: Se crea un objeto JS en lugar de FormData ---
-        const requestBody = {
-            custpage_invoice_id: searchParams.invoiceOrCustomerId,
-            custpage_invoice_total: searchParams.invoiceTotal,
-            custpage_action: 'search'
-        };
+        // --- CORRECCIÓN: Volvemos a usar FormData ---
+        const formData = new FormData();
+        formData.append('custpage_invoice_id', searchParams.invoiceOrCustomerId);
+        formData.append('custpage_invoice_total', searchParams.invoiceTotal);
+        formData.append('custpage_action', 'search');
 
         try {
             const response = await fetch(config.suiteletUrl, {
                 method: 'POST',
-                // --- CAMBIO AQUÍ: Se envían los datos como JSON ---
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
+                // No se necesita el header 'Content-Type', el navegador lo añade automáticamente para FormData
+                body: formData,
             });
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const data = await response.json();
@@ -110,30 +106,28 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setIsLoading(true);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
 
-        // --- CAMBIO AQUÍ: Se crea un objeto JS en lugar de FormData ---
-        const requestBody = {
-            action: 'timbrar',
-            custpage_invoice_id: currentInvoiceData.internalId,
-            custpage_customer_id: currentInvoiceData.customerId,
-            recordType: currentInvoiceData.recordType || 'invoice',
-            custpage_subsidiary_id: currentInvoiceData.subsidiaryId,
-            custpage_razon_social: fiscalDataFromForm.razonSocial,
-            custpage_rfc: fiscalDataFromForm.rfc,
-            custpage_email_cfdi: fiscalDataFromForm.emailCfdi,
-            custpage_domicilio_fiscal: fiscalDataFromForm.domicilioFiscal,
-            custpage_codigo_postal_fiscal: fiscalDataFromForm.codigoPostalFiscal,
-            custpage_regimen_fiscal: fiscalDataFromForm.regimenFiscal,
-            custpage_uso_cfdi: fiscalDataFromForm.usoCfdi,
-        };
+        // --- CORRECCIÓN: Volvemos a usar FormData ---
+        const formData = new FormData();
+        formData.append('action', 'timbrar');
+        formData.append('custpage_invoice_id', currentInvoiceData.internalId);
+        formData.append('custpage_customer_id', currentInvoiceData.customerId);
+        formData.append('recordType', currentInvoiceData.recordType || 'invoice');
+        if (currentInvoiceData.subsidiaryId) {
+            formData.append('custpage_subsidiary_id', currentInvoiceData.subsidiaryId);
+        }
+        formData.append('custpage_razon_social', fiscalDataFromForm.razonSocial);
+        formData.append('custpage_rfc', fiscalDataFromForm.rfc);
+        formData.append('custpage_email_cfdi', fiscalDataFromForm.emailCfdi);
+        formData.append('custpage_domicilio_fiscal', fiscalDataFromForm.domicilioFiscal);
+        formData.append('custpage_codigo_postal_fiscal', fiscalDataFromForm.codigoPostalFiscal);
+        formData.append('custpage_regimen_fiscal', fiscalDataFromForm.regimenFiscal);
+        formData.append('custpage_uso_cfdi', fiscalDataFromForm.usoCfdi);
 
         try {
             const response = await fetch(config.suiteletUrl,{
                 method: 'POST',
-                // --- CAMBIO AQUÍ: Se envían los datos como JSON ---
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
+                // No se necesita el header 'Content-Type'
+                body: formData
             });
             if (!response.ok) throw new Error(`Error del servidor de timbrado: ${response.status}`);
             const data = await response.json();
