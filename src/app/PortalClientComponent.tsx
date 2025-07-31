@@ -150,7 +150,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
     };
 
     return (
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex flex-col items-center justify-center p-4 text-slate-100">
+        <div className="bg-white min-h-screen flex flex-col items-center justify-center p-4 text-slate-900">
             <Head>
                 <title>{config.clientName || 'Portal de Autofacturación'}</title>
             </Head>
