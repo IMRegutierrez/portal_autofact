@@ -219,7 +219,8 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 {showFiscalForm && currentInvoiceData && (
                     <FiscalDataForm
                         invoiceNumberForContext={currentInvoiceData.invoiceNumber}
-                        initialData={{}}
+                        // --- CORRECCIÓN AQUÍ ---
+                        initialData={mockSavedFiscalData[currentInvoiceData.invoiceNumber] || {}}
                         onSubmit={handleFiscalDataSubmit}
                         isLoading={isLoading}
                         theme={theme}
