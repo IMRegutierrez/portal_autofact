@@ -13,6 +13,8 @@ interface FiscalData {
 interface Theme {
     textPrimary: string;
     textSecondary: string;
+    button: string;
+    buttonText: string;
 }
 interface FiscalDataFormProps {
     invoiceNumberForContext: string;
@@ -111,11 +113,11 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 </div>
                 <button 
                     type="submit" 
-                    id="saveAndGenerateCfdiButton"
                     disabled={isLoading}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all"
+                    style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }}
+                    className="w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
                 >
-                    {isLoading ? 'Procesando...' : 'Guardar Datos y Generar CFDI'}
+                    {isLoading ? 'Procesando...' : 'Generar CFDI'}
                 </button>
             </form>
         </div>

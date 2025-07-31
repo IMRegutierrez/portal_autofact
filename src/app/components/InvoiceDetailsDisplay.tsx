@@ -18,6 +18,8 @@ interface InvoiceData {
 interface Theme {
     textPrimary: string;
     textSecondary: string;
+    button: string;
+    buttonText: string;
 }
 interface InvoiceDetailsDisplayProps {
     invoiceData: InvoiceData;
@@ -64,7 +66,8 @@ export default function InvoiceDetailsDisplay({ invoiceData, onConfirmDetails, t
             {!confirmed && (
                  <button 
                     onClick={handleConfirm}
-                    className="mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all"
+                    style={{ backgroundColor: theme.button, color: theme.buttonText }}
+                    className="mt-8 w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
                 >
                     Confirmar Detalles de Factura
                 </button>
