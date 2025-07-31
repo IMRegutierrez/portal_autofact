@@ -169,18 +169,17 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 <title>{config.clientName || 'Portal de Autofacturación'}</title>
             </Head>
             <div style={{ backgroundColor: '#78BE20' }} className="w-full max-w-2xl shadow-2xl rounded-xl p-6 md:p-10 text-gray-800">
-                <header className="text-center mb-6">
-                    {/* --- CAMBIO AQUÍ: Se muestra el logo si existe, si no, el icono SVG --- */}
+                <header className="text-center mb-8">
                     {config.logoUrl ? (
                         <img
                             src={config.logoUrl}
                             alt={`Logo de ${config.clientName}`}
-                            className="h-82 w-auto mx-auto mb-2 object-contain"
+                            className="h-24 w-auto mx-auto object-contain" 
                         />
                     ) : (
-                        <svg className="w-16 h-16 mx-auto mb-2 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <svg className="w-16 h-16 mx-auto text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     )}
-                    <h1 className="text-3xl font-bold text-slate-900">{config.clientName || 'Portal de Autofacturación'}</h1>
+                    <h1 className="text-3xl font-bold text-slate-900 pt-4">{config.clientName || 'Portal de Autofacturación'}</h1>
                     <p className="text-slate-700 mt-2">Consulta facturas y genera tu CFDI.</p>
                 </header>
 
