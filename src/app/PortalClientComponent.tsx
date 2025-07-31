@@ -249,7 +249,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             </div>
             <Modal isOpen={showModal} message={modalMessage} onClose={() => setShowModal(false)} />
             <footer className="text-center mt-12 pb-6">
-                <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} {config.clientName || 'TuEmpresa S.A. de C.V.'} Todos los derechos reservados.</p>
+                <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} {'IMR Software'} Todos los derechos reservados.</p>
             </footer>
         </div>
     );
