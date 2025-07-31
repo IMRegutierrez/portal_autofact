@@ -39,9 +39,17 @@ interface InvoiceData {
     dueDate: string;
     totalAmount: string;
     lineItems: LineItem[];
-    isStamped?: boolean; // Campo para saber si ya fue timbrada
-    xmlUrl?: string;     // URL del XML si ya fue timbrada
-    pdfUrl?: string;     // URL del PDF si ya fue timbrada
+    isStamped?: boolean;
+    xmlUrl?: string;
+    pdfUrl?: string;
+    // Campos fiscales que pueden venir del cliente en Netsuite
+    razonSocial?: string;
+    rfc?: string;
+    emailCfdi?: string;
+    domicilioFiscal?: string;
+    codigoPostalFiscal?: string;
+    regimenFiscal?: string;
+    usoCfdi?: string;
 }
 interface FiscalData {
     razonSocial: string;
@@ -201,9 +209,9 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 </header>
 
                 {/* Nota: Debes actualizar InvoiceSearchForm para que acepte y use las props de color */}
-                <InvoiceSearchForm 
-                    onSearch={handleSearchSubmit} 
-                    isLoading={isLoading} 
+                <InvoiceSearchForm
+                    onSearch={handleSearchSubmit}
+                    isLoading={isLoading}
                     theme={theme}
                 />
 
@@ -220,7 +228,9 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                     <FiscalDataForm
                         invoiceNumberForContext={currentInvoiceData.invoiceNumber}
                         // --- CORRECCIÓN AQUÍ ---
-                        initialData={mockSavedFiscalData[currentInvoiceData.invoiceNumber] || {}}
+                        // Se priorizan los datos guardados en la sesión, pero si no existen,
+                        // se usan los que vienen de la búsqueda inicial en Netsuite.
+                        initialData={mockSavedFiscalData[currentInvoiceData.invoiceNumber] || currentInvoiceData}
                         onSubmit={handleFiscalDataSubmit}
                         isLoading={isLoading}
                         theme={theme}
