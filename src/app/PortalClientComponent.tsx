@@ -9,29 +9,29 @@ import Loader from './components/Loader';
 
 // --- Definición de Tipos (Interfaces) ---
 interface ClientConfig {
-  clientId: string;
-  suiteletUrl: string;
-  netsuiteCompId: string;
-  clientName: string;
-  logoUrl?: string; // Se añade el campo opcional para la URL del logo
+    clientId: string;
+    suiteletUrl: string;
+    netsuiteCompId: string;
+    clientName: string;
+    logoUrl?: string; // Se añade el campo opcional para la URL del logo
 }
 interface LineItem {
-  description: string;
-  quantity: number;
-  unitPrice: string;
-  total: string;
+    description: string;
+    quantity: number;
+    unitPrice: string;
+    total: string;
 }
 interface InvoiceData {
-  internalId: string;
-  invoiceNumber: string;
-  customerId: string;
-  recordType: string;
-  subsidiaryId?: string;
-  customerName: string;
-  issueDate: string;
-  dueDate: string;
-  totalAmount: string;
-  lineItems: LineItem[];
+    internalId: string;
+    invoiceNumber: string;
+    customerId: string;
+    recordType: string;
+    subsidiaryId?: string;
+    customerName: string;
+    issueDate: string;
+    dueDate: string;
+    totalAmount: string;
+    lineItems: LineItem[];
 }
 interface FiscalData {
     razonSocial: string;
@@ -125,13 +125,13 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         formData.append('custpage_uso_cfdi', fiscalDataFromForm.usoCfdi);
 
         try {
-            const response = await fetch(config.suiteletUrl,{
+            const response = await fetch(config.suiteletUrl, {
                 method: 'POST',
                 // No se necesita el header 'Content-Type'
                 body: formData
             });
             if (!response.ok) throw new Error(`Error del servidor de timbrado: ${response.status}`);
-            console.log('Response from NS:',response);
+            console.log('Response from NS:', response);
             const data = await response.json();
             if (data && data.success) {
                 displayModal(data.message || "Proceso de CFDI completado.");
@@ -157,23 +157,23 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             </Head>
             <div style={{ backgroundColor: '#78BE20' }} className="w-full max-w-2xl shadow-2xl rounded-xl p-6 md:p-10 text-gray-800">
                 <header className="text-center mb-8">
-                     {/* --- CAMBIO AQUÍ: Se muestra el logo si existe, si no, el icono SVG --- */}
-                     {config.logoUrl ? (
-                        <img 
-                            src={config.logoUrl} 
-                            alt={`Logo de ${config.clientName}`} 
-                            className="h-16 w-auto mx-auto mb-4 object-contain" 
+                    {/* --- CAMBIO AQUÍ: Se muestra el logo si existe, si no, el icono SVG --- */}
+                    {config.logoUrl ? (
+                        <img
+                            src={config.logoUrl}
+                            alt={`Logo de ${config.clientName}`}
+                            className="h-24 w-auto mx-auto mb-4 object-contain"
                         />
-                     ) : (
+                    ) : (
                         <svg className="w-16 h-16 mx-auto mb-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                     )}
+                    )}
                     <h1 className="text-3xl font-bold text-slate-900">{config.clientName || 'Portal de Autofacturación'}</h1>
                     <p className="text-slate-700 mt-2">Consulta facturas y genera tu CFDI.</p>
                 </header>
-                
+
                 {/* El resto de los componentes se renderizan aquí */}
                 <InvoiceSearchForm onSearch={handleSearchSubmit} isLoading={isLoading} />
-                
+
                 {isLoading && <Loader />}
 
                 {showInvoiceDetails && currentInvoiceData && (
