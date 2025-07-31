@@ -1,5 +1,4 @@
-import getConfig from 'next/config';
-import { getClientConfig } from '../lib/aws-config';
+import { getClientConfig, getCatalogos } from '../lib/aws-config'; // Se importa la nueva función
 import PortalClientComponent from './PortalClientComponent';
 
 // Interfaz para definir la estructura de la configuración del cliente
@@ -8,9 +7,13 @@ interface ClientConfig {
   suiteletUrl: string;
   netsuiteCompId: string;
   clientName: string;
+  logoUrl?: string;
+  // ... otros campos de tema
 }
-
-// Interfaz para la configuración de AWS
+interface SelectOption {
+    value: string;
+    label: string;
+}
 interface AwsConfig {
     accessKeyId: string | undefined;
     secretAccessKey: string | undefined;
@@ -18,27 +21,38 @@ interface AwsConfig {
     tableName: string | undefined;
 }
 
-// La página ahora es un único componente de servidor asíncrono.
 export default async function Page(props: any) {
     const clientId = props.searchParams?.clientId;
 
-    // Se obtiene la configuración desde serverRuntimeConfig en next.config.js
-    const { serverRuntimeConfig } = getConfig();
-
+    // Se leen las variables de entorno para crear el objeto de configuración
     const awsConfig: AwsConfig = {
-        accessKeyId: serverRuntimeConfig.PORTAL_ACCESS_KEY_ID,
-        secretAccessKey: serverRuntimeConfig.PORTAL_SECRET_ACCESS_KEY,
-        region: serverRuntimeConfig.PORTAL_REGION,
-        tableName: serverRuntimeConfig.PORTAL_TABLE_NAME,
+        accessKeyId: process.env.PORTAL_ACCESS_KEY_ID,
+        secretAccessKey: process.env.PORTAL_SECRET_ACCESS_KEY,
+        region: process.env.PORTAL_REGION,
+        tableName: process.env.PORTAL_TABLE_NAME,
     };
 
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
+    // Se inicializan los catálogos como arreglos vacíos
+    let regimenesFiscales: SelectOption[] = [];
+    let usosCfdi: SelectOption[] = [];
 
     if (clientId) {
         try {
-            // Llamamos a la función de DynamoDB directamente desde la página.
-            clientConfig = (await getClientConfig(clientId, awsConfig)) as ClientConfig | null;
+            // Se obtienen la configuración del cliente y los catálogos en paralelo
+            const [configResult, catalogosResult] = await Promise.all([
+                getClientConfig(clientId, awsConfig),
+                getCatalogos(awsConfig) // Se pasa awsConfig a la función de catálogos
+            ]);
+
+            clientConfig = configResult as ClientConfig | null;
+            
+            if (catalogosResult) {
+                regimenesFiscales = catalogosResult.regimenes;
+                usosCfdi = catalogosResult.usos;
+            }
+
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
             }
@@ -61,8 +75,12 @@ export default async function Page(props: any) {
         );
     }
 
-    // Si todo está bien, renderizamos el componente de cliente y le pasamos la configuración.
+    // Se pasan los catálogos obtenidos como props al componente de cliente
     return (
-        <PortalClientComponent config={clientConfig} />
+        <PortalClientComponent 
+            config={clientConfig} 
+            regimenesFiscales={regimenesFiscales}
+            usosCfdi={usosCfdi}
+        />
     );
 }

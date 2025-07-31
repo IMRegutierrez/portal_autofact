@@ -16,15 +16,23 @@ interface Theme {
     button: string;
     buttonText: string;
 }
+// --- CAMBIO AQUÍ: Se definen los tipos para las opciones de los selects ---
+interface SelectOption {
+    value: string;
+    label: string;
+}
 interface FiscalDataFormProps {
     invoiceNumberForContext: string;
     initialData: Partial<FiscalData>;
     onSubmit: (data: FiscalData) => void;
     isLoading: boolean;
     theme: Theme;
+    // --- CAMBIO AQUÍ: Se añaden las nuevas props para los catálogos ---
+    regimenesFiscales: SelectOption[];
+    usosCfdi: SelectOption[];
 }
 
-export default function FiscalDataForm({ invoiceNumberForContext, initialData, onSubmit, isLoading, theme }: FiscalDataFormProps) {
+export default function FiscalDataForm({ invoiceNumberForContext, initialData, onSubmit, isLoading, theme, regimenesFiscales, usosCfdi }: FiscalDataFormProps) {
     const [formData, setFormData] = useState<FiscalData>({
         razonSocial: '',
         rfc: '',
@@ -89,26 +97,24 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                     <label htmlFor="regimenFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Régimen Fiscal Receptor</label>
                     <select id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
                         <option value="">Seleccione un régimen...</option>
-                        <option value="601">General de Ley Personas Morales</option>
-                        <option value="603">Personas Morales con Fines no Lucrativos</option>
-                        <option value="605">Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
-                        <option value="606">Arrendamiento</option>
-                        <option value="612">Personas Físicas con Actividades Empresariales y Profesionales</option>
-                        <option value="616">Sin obligaciones fiscales</option>
-                        <option value="621">Incorporación Fiscal</option>
-                        <option value="626">Régimen Simplificado de Confianza</option>
+                        {/* --- CAMBIO AQUÍ: Se generan las opciones dinámicamente --- */}
+                        {regimenesFiscales.map(regimen => (
+                            <option key={regimen.value} value={regimen.value}>
+                                {regimen.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div>
                     <label htmlFor="usoCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Uso de CFDI</label>
                     <select id="usoCfdi" name="usoCfdi" value={formData.usoCfdi} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
                         <option value="">Seleccione un uso...</option>
-                        <option value="S01">Sin efectos fiscales</option>
-                        <option value="G01">Adquisición de mercancías</option>
-                        <option value="G03">Gastos en general</option>
-                        <option value="I01">Construcciones</option>
-                        <option value="I08">Otra maquinaria y equipo</option>
-                        <option value="P01">Por definir</option>
+                        {/* --- CAMBIO AQUÍ: Se generan las opciones dinámicamente --- */}
+                        {usosCfdi.map(uso => (
+                            <option key={uso.value} value={uso.value}>
+                                {uso.label}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <button 

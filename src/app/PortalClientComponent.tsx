@@ -60,9 +60,15 @@ interface FiscalData {
     regimenFiscal: string;
     usoCfdi: string;
 }
+// Se define el tipo para las opciones de los catálogos
+interface SelectOption {
+    value: string;
+    label: string;
+}
 
 // --- Componente Principal del Cliente ---
-export default function PortalClientComponent({ config }: { config: ClientConfig }) {
+// Se añaden los catálogos a las props del componente
+export default function PortalClientComponent({ config, regimenesFiscales, usosCfdi }: { config: ClientConfig, regimenesFiscales: SelectOption[], usosCfdi: SelectOption[] }) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentInvoiceData, setCurrentInvoiceData] = useState<InvoiceData | null>(null);
     const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
@@ -234,6 +240,9 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                         onSubmit={handleFiscalDataSubmit}
                         isLoading={isLoading}
                         theme={theme}
+                        // Se pasan los catálogos recibidos como props
+                        regimenesFiscales={regimenesFiscales}
+                        usosCfdi={usosCfdi}
                     />
                 )}
                 {(cfdiLinks.xmlUrl || cfdiLinks.pdfUrl) && !isLoading && (
