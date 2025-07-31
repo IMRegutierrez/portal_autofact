@@ -13,7 +13,7 @@ interface ClientConfig {
     suiteletUrl: string;
     netsuiteCompId: string;
     clientName: string;
-    logoUrl?: string; // Se añade el campo opcional para la URL del logo
+    logoUrl?: string;
 }
 interface LineItem {
     description: string;
@@ -83,19 +83,21 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             });
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const data = await response.json();
-            if (data && data.success && data.invoiceData) {
-                // --- CAMBIO AQUÍ: Se verifica si la factura ya fue timbrada ---
-                if (data.invoiceData.isStamped) {
+            
+            // --- CORRECCIÓN AQUÍ ---
+            // Se verifica primero si la factura ya está timbrada, incluso si success es false.
+            if (data && data.invoiceData && data.invoiceData.isStamped) {
                     // Si ya está timbrada, muestra los links y un mensaje
-                    displayModal('Esta factura ya ha sido timbrada anteriormente. Puede descargar los archivos.');
+                displayModal(data.message || 'Esta factura ya ha sido timbrada anteriormente.');
                     setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
-                } else {
-                    // Si no está timbrada, continúa el flujo normal
-                setCurrentInvoiceData(data.invoiceData);
-                setShowInvoiceDetails(true);
+            } else if (data && data.success && data.invoiceData) {
+                // Si la búsqueda fue exitosa y la factura no está timbrada, continúa el flujo normal
+                    setCurrentInvoiceData(data.invoiceData);
+                    setShowInvoiceDetails(true);
                 }
-            } else {
-                displayModal(data.message || 'Factura no encontrada.');
+             else {
+                // Si no se encontró la factura o hubo otro error
+                displayModal(data.message || 'Factura no encontrada o datos incorrectos.');
             }
         } catch (error: any) {
             displayModal(`Error al buscar factura: ${error.message}`);
@@ -167,7 +169,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 <title>{config.clientName || 'Portal de Autofacturación'}</title>
             </Head>
             <div style={{ backgroundColor: '#78BE20' }} className="w-full max-w-2xl shadow-2xl rounded-xl p-6 md:p-10 text-gray-800">
-                <header className="text-center mb-8">
+                <header className="text-center mb-6">
                     {/* --- CAMBIO AQUÍ: Se muestra el logo si existe, si no, el icono SVG --- */}
                     {config.logoUrl ? (
                         <img
