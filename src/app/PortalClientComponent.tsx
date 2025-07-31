@@ -154,11 +154,12 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             <Head>
                 <title>{config.clientName || 'Portal de Autofacturación'}</title>
             </Head>
-            <div className="w-full max-w-2xl bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10">
+            {/* El color Pantone 368 C (#78BE20) se aplica aquí con 70% de opacidad */}
+            <div className="w-full max-w-2xl bg-[#78BE20]/70 shadow-2xl rounded-xl p-6 md:p-10">
                 <header className="text-center mb-8">
-                     <svg className="w-16 h-16 mx-auto mb-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <h1 className="text-3xl font-bold text-sky-400">{config.clientName || 'Portal de Autofacturación'}</h1>
-                    <p className="text-slate-400 mt-2">Consulta facturas y genera tu CFDI.</p>
+                     <svg className="w-16 h-16 mx-auto mb-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <h1 className="text-3xl font-bold text-slate-900">{config.clientName || 'Portal de Autofacturación'}</h1>
+                    <p className="text-slate-700 mt-2">Consulta facturas y genera tu CFDI.</p>
                 </header>
                 <InvoiceSearchForm onSearch={handleSearchSubmit} isLoading={isLoading} />
                 {isLoading && <Loader />}
@@ -177,9 +178,9 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                     />
                 )}
                 {(cfdiLinks.xmlUrl || cfdiLinks.pdfUrl) && !isLoading && (
-                    <div className="mt-8 p-6 bg-slate-700/50 rounded-lg shadow-inner text-center">
-                        <h3 className="text-xl font-semibold text-sky-300 mb-4">CFDI Generado Exitosamente</h3>
-                        <p className="text-slate-400 mb-6">Descarga los archivos de tu factura.</p>
+                    <div className="mt-8 p-6 bg-white/50 rounded-lg shadow-inner text-center">
+                        <h3 className="text-xl font-semibold text-slate-900 mb-4">CFDI Generado Exitosamente</h3>
+                        <p className="text-slate-700 mb-6">Descarga los archivos de tu factura.</p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
                             {cfdiLinks.xmlUrl && <a href={cfdiLinks.xmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 transition-colors">Descargar XML</a>}
                             {cfdiLinks.pdfUrl && <a href={cfdiLinks.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">Descargar PDF</a>}
