@@ -18,7 +18,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading }) {
     return (
         <form onSubmit={handleSubmit} className="space-y-6 mb-8">
             <div>
-                <label htmlFor="invoiceOrCustomerId" className="block text-sm font-medium text-slate-300 mb-1">Número de Factura o ID de Cliente</label>
+                <label htmlFor="invoiceOrCustomerId" className="block text-sm font-medium text-slate-800 mb-1">Número de Factura o ID de Cliente</label>
                 <input 
                     type="text" 
                     id="invoiceOrCustomerId" 
@@ -31,7 +31,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading }) {
                 />
             </div>
             <div>
-                <label htmlFor="invoiceTotal" className="block text-sm font-medium text-slate-300 mb-1">Total de la Factura</label>
+                <label htmlFor="invoiceTotal" className="block text-sm font-medium text-slate-800 mb-1">Total de la Factura</label>
                 <input 
                     type="text" // Podría ser "number" con step="0.01" pero text da más flexibilidad para el parseo posterior
                     id="invoiceTotal" 
@@ -46,7 +46,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading }) {
             <button 
                 type="submit"
                 disabled={isLoading}
-                className={`w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 ${isLoading ? 'bg-slate-500 cursor-not-allowed' : 'bg-sky-500 hover:bg-sky-600'}`}
+                className={`w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center justify-center space-x-2 ${isLoading ? 'bg-slate-500 cursor-not-allowed' : 'bg-[#133568] hover:bg-[#0f2a54]'}`}
             >
                 <svg className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     {!isLoading && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>}
