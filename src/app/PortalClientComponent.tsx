@@ -179,7 +179,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                     ) : (
                         <svg className="w-16 h-16 mx-auto text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     )}
-                    <h1 className="text-3xl font-bold text-slate-900 pt-4">{config.clientName || 'Portal de Autofacturación'}</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 pt-2">{config.clientName || 'Portal de Autofacturación'}</h1>
                     <p className="text-slate-700 mt-2">Consulta facturas y genera tu CFDI.</p>
                 </header>
 
