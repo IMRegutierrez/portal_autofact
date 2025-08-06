@@ -63,13 +63,17 @@ interface FiscalData {
 // --- Componente Principal del Cliente ---
 export default function PortalClientComponent({ config }: { config: ClientConfig }) {
     const [isLoading, setIsLoading] = useState(false);
+    const [isReporting, setIsReporting] = useState(false); // Nuevo estado para el reporte
     const [currentInvoiceData, setCurrentInvoiceData] = useState<InvoiceData | null>(null);
     const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
     const [showFiscalForm, setShowFiscalForm] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [showReportButton, setShowReportButton] = useState(false); // Nuevo estado para el botón
     const [cfdiLinks, setCfdiLinks] = useState({ xmlUrl: null, pdfUrl: null });
     const [mockSavedFiscalData, setMockSavedFiscalData] = useState<{ [key: string]: any }>({});
+    // --- CORRECCIÓN AQUÍ: Se restaura la definición del estado ---
+    const [collectedFiscalData, setCollectedFiscalData] = useState<FiscalData | null>(null);
 
     const theme = {
         background: config.backgroundColor || '#FFFFFF',
@@ -80,25 +84,27 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         buttonText: config.buttonTextColor || '#FFFFFF'
     };
 
-    const displayModal = (message: string) => {
+    const displayModal = (message: string, isReportableError: boolean = false) => {
         setModalMessage(message);
+        setShowReportButton(isReportableError); // Mostrar el botón solo si es un error reportable
         setShowModal(true);
     };
 
-    const handleSearchSubmit = async (searchParams: { invoiceOrCustomerId: string }) => {
+    const handleSearchSubmit = async (searchParams: { invoiceOrCustomerId: string; }) => {
         setIsLoading(true);
         setCurrentInvoiceData(null);
         setShowInvoiceDetails(false);
         setShowFiscalForm(false);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
+        setCollectedFiscalData(null);
 
         const formData = new FormData();
         formData.append('custpage_invoice_id', searchParams.invoiceOrCustomerId);
         formData.append('custpage_action', 'search');
-        formData.append('custpage_client_id', config.clientId);
         if (config.searchId) {
             formData.append('custpage_search_id', config.searchId);
         }
+        formData.append('custpage_client_id', config.clientId);
 
         try {
             const response = await fetch(config.suiteletUrl, {
@@ -107,7 +113,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             });
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const data = await response.json();
-
+            
             if (data && data.invoiceData && data.invoiceData.isStamped) {
                 displayModal(data.message || 'Esta factura ya ha sido timbrada anteriormente.');
                 setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
@@ -137,6 +143,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         }
         setIsLoading(true);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
+        setCollectedFiscalData(fiscalDataFromForm); // Guardar los datos fiscales ingresados
 
         const formData = new FormData();
         formData.append('custpage_action', 'timbrar');
@@ -169,12 +176,53 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 setShowFiscalForm(false);
                 setShowInvoiceDetails(false);
             } else {
-                displayModal(data.message || "Ocurrió un error durante el timbrado.");
+                // --- CAMBIO AQUÍ: Se indica que es un error reportable ---
+                displayModal(data.message || "Ocurrió un error durante el timbrado.", true);
             }
         } catch (error: any) {
-            displayModal(`Error al timbrar: ${error.message}`);
+            displayModal(`Error al timbrar: ${error.message}`, true);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // --- NUEVA FUNCIÓN PARA MANEJAR EL REPORTE ---
+    const handleReportProblem = async () => {
+        if (!currentInvoiceData || !collectedFiscalData) {
+            displayModal("No hay suficiente información para enviar el reporte.");
+            return;
+        }
+        setIsReporting(true);
+
+        // Reemplaza esta URL con la URL de tu NUEVO Suitelet de reporte
+        const reportSuiteletUrl = 'https://5652668-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1243&deploy=1&compid=5652668_SB1&ns-at=AAEJ7tMQSluvxAx0dglrmumpS9xTwQaJb_eon29bGYk39sfULVw'; 
+
+        const reportData = {
+            invoiceData: currentInvoiceData,
+            fiscalData: collectedFiscalData,
+            errorMessage: modalMessage,
+            clientEmail: collectedFiscalData.emailCfdi
+        };
+
+        try {
+            const response = await fetch(reportSuiteletUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reportData)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "El servidor de reportes devolvió un error.");
+            }
+            // Se cierra el modal actual y se muestra uno nuevo de confirmación
+            setShowModal(false);
+            setTimeout(() => displayModal(result.message), 500); // Pequeño delay para que se vea la transición
+        } catch (error: any) {
+            // Se cierra el modal actual y se muestra uno nuevo de error
+            setShowModal(false);
+            setTimeout(() => displayModal(`No se pudo enviar el reporte: ${error.message}`), 500);
+        } finally {
+            setIsReporting(false);
         }
     };
 
@@ -233,7 +281,15 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                     </div>
                 )}
             </div>
-            <Modal isOpen={showModal} message={modalMessage} onClose={() => setShowModal(false)} />
+            {/* Se pasan las nuevas props al Modal */}
+            <Modal 
+                isOpen={showModal} 
+                message={modalMessage} 
+                onClose={() => setShowModal(false)}
+                showReportButton={showReportButton}
+                onReportProblem={handleReportProblem}
+                isReporting={isReporting}
+            />
             <footer className="text-center mt-12 pb-6">
                 <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} {'IMR Software'} Todos los derechos reservados.</p>
             </footer>
