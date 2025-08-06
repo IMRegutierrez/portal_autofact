@@ -2,37 +2,35 @@ import { useState } from 'react';
 
 // Se define una interfaz para el objeto de tema
 interface Theme {
-    textPrimary: string;
     textSecondary: string;
     button: string;
     buttonText: string;
+    textPrimary: string; // Añadido para los estilos del input
 }
 
-// Se define la interfaz para las props del componente, incluyendo el tema
+// Se define la interfaz para las props del componente, ahora solo con invoiceOrCustomerId
 interface InvoiceSearchFormProps {
-    onSearch: (searchParams: { invoiceOrCustomerId: string; invoiceTotal: string }) => void;
+    onSearch: (searchParams: { invoiceOrCustomerId: string; }) => void;
     isLoading: boolean;
     theme: Theme;
 }
 
 export default function InvoiceSearchForm({ onSearch, isLoading, theme }: InvoiceSearchFormProps) {
     const [invoiceOrCustomerId, setInvoiceOrCustomerId] = useState('');
-    const [invoiceTotal, setInvoiceTotal] = useState('');
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!invoiceOrCustomerId || !invoiceTotal) {
-            alert("Por favor, completa todos los campos de búsqueda.");
+        if (!invoiceOrCustomerId) {
+            alert("Por favor, ingresa el Número de Factura o ID de Cliente.");
             return;
         }
-        onSearch({ invoiceOrCustomerId, invoiceTotal });
+        onSearch({ invoiceOrCustomerId });
     };
 
-    // Estilos dinámicos para los inputs basados en el tema
     const inputStyle = {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)', // Un fondo semi-transparente que funciona bien en fondos de color
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        color: theme.textPrimary // Usa el color de texto primario del tema
+        color: theme.textPrimary
     };
 
     return (
@@ -53,22 +51,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme }: Invoic
                     disabled={isLoading}
                 />
             </div>
-            <div>
-                <label htmlFor="invoiceTotal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
-                    Total de la Factura
-                </label>
-                <input 
-                    type="text"
-                    id="invoiceTotal" 
-                    value={invoiceTotal}
-                    onChange={(e) => setInvoiceTotal(e.target.value)}
-                    required
-                    style={inputStyle}
-                    className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
-                    placeholder="Ej: 1250.75"
-                    disabled={isLoading}
-                />
-            </div>
+            {/* El campo "Total de la Factura" ha sido eliminado */}
             <button 
                 type="submit"
                 disabled={isLoading}

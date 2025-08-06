@@ -14,13 +14,13 @@ interface ClientConfig {
     netsuiteCompId: string;
     clientName: string;
     logoUrl?: string;
-    // --- NUEVOS CAMPOS PARA ESTILOS DINÁMICOS ---
-    backgroundColor?: string;      // Color de fondo de toda la página
-    cardBackgroundColor?: string;  // Color del cuadro principal
-    primaryTextColor?: string;     // Color para títulos principales
-    secondaryTextColor?: string;   // Color para textos secundarios y etiquetas
-    buttonColor?: string;          // Color principal de los botones
-    buttonTextColor?: string;      // Color del texto en los botones
+    backgroundColor?: string;
+    cardBackgroundColor?: string;
+    primaryTextColor?: string;
+    secondaryTextColor?: string;
+    buttonColor?: string;
+    buttonTextColor?: string;
+    searchId?: string;
 }
 interface LineItem {
     description: string;
@@ -42,7 +42,6 @@ interface InvoiceData {
     isStamped?: boolean;
     xmlUrl?: string;
     pdfUrl?: string;
-    // Campos fiscales que pueden venir del cliente en Netsuite
     razonSocial?: string;
     rfc?: string;
     emailCfdi?: string;
@@ -72,13 +71,12 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
     const [cfdiLinks, setCfdiLinks] = useState({ xmlUrl: null, pdfUrl: null });
     const [mockSavedFiscalData, setMockSavedFiscalData] = useState<{ [key: string]: any }>({});
 
-    // --- Colores por defecto en caso de que no vengan en la configuración ---
     const theme = {
         background: config.backgroundColor || '#FFFFFF',
         cardBackground: config.cardBackgroundColor || '#78BE20',
-        textPrimary: config.primaryTextColor || '#1E293B', // slate-900
-        textSecondary: config.secondaryTextColor || '#334155', // slate-700
-        button: config.buttonColor || '#0284C7', // sky-600
+        textPrimary: config.primaryTextColor || '#1E293B',
+        textSecondary: config.secondaryTextColor || '#334155',
+        button: config.buttonColor || '#0284C7',
         buttonText: config.buttonTextColor || '#FFFFFF'
     };
 
@@ -87,41 +85,36 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setShowModal(true);
     };
 
-    const handleSearchSubmit = async (searchParams: { invoiceOrCustomerId: string; invoiceTotal: string }) => {
+    const handleSearchSubmit = async (searchParams: { invoiceOrCustomerId: string }) => {
         setIsLoading(true);
         setCurrentInvoiceData(null);
         setShowInvoiceDetails(false);
         setShowFiscalForm(false);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
 
-        // --- CORRECCIÓN: Volvemos a usar FormData ---
         const formData = new FormData();
         formData.append('custpage_invoice_id', searchParams.invoiceOrCustomerId);
-        formData.append('custpage_invoice_total', searchParams.invoiceTotal);
         formData.append('custpage_action', 'search');
+        formData.append('custpage_client_id', config.clientId);
+        if (config.searchId) {
+            formData.append('custpage_search_id', config.searchId);
+        }
 
         try {
             const response = await fetch(config.suiteletUrl, {
                 method: 'POST',
-                // No se necesita el header 'Content-Type', el navegador lo añade automáticamente para FormData
                 body: formData,
             });
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const data = await response.json();
 
-            // --- CORRECCIÓN AQUÍ ---
-            // Se verifica primero si la factura ya está timbrada, incluso si success es false.
             if (data && data.invoiceData && data.invoiceData.isStamped) {
-                // Si ya está timbrada, muestra los links y un mensaje
                 displayModal(data.message || 'Esta factura ya ha sido timbrada anteriormente.');
                 setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
             } else if (data && data.success && data.invoiceData) {
-                // Si la búsqueda fue exitosa y la factura no está timbrada, continúa el flujo normal
                 setCurrentInvoiceData(data.invoiceData);
                 setShowInvoiceDetails(true);
-            }
-            else {
-                // Si no se encontró la factura o hubo otro error
+            } else {
                 displayModal(data.message || 'Factura no encontrada o datos incorrectos.');
             }
         } catch (error: any) {
@@ -145,7 +138,6 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setIsLoading(true);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
 
-        // --- CORRECCIÓN: Volvemos a usar FormData ---
         const formData = new FormData();
         formData.append('custpage_action', 'timbrar');
         formData.append('custpage_invoice_id', currentInvoiceData.internalId);
@@ -163,13 +155,11 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         formData.append('custpage_uso_cfdi', fiscalDataFromForm.usoCfdi);
 
         try {
-            const response = await fetch(config.suiteletUrl, {
+            const response = await fetch(config.suiteletUrl,{
                 method: 'POST',
-                // No se necesita el header 'Content-Type'
                 body: formData
             });
             if (!response.ok) throw new Error(`Error del servidor de timbrado: ${response.status}`);
-            console.log('Response from NS:', response);
             const data = await response.json();
             if (data && data.success) {
                 displayModal(data.message || "Proceso de CFDI completado.");
@@ -208,7 +198,6 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                     <p style={{ color: theme.textSecondary }} className="mt-2">Consulta facturas y genera tu CFDI.</p>
                 </header>
 
-                {/* Nota: Debes actualizar InvoiceSearchForm para que acepte y use las props de color */}
                 <InvoiceSearchForm
                     onSearch={handleSearchSubmit}
                     isLoading={isLoading}
@@ -227,9 +216,6 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 {showFiscalForm && currentInvoiceData && (
                     <FiscalDataForm
                         invoiceNumberForContext={currentInvoiceData.invoiceNumber}
-                        // --- CORRECCIÓN AQUÍ ---
-                        // Se priorizan los datos guardados en la sesión, pero si no existen,
-                        // se usan los que vienen de la búsqueda inicial en Netsuite.
                         initialData={mockSavedFiscalData[currentInvoiceData.invoiceNumber] || currentInvoiceData}
                         onSubmit={handleFiscalDataSubmit}
                         isLoading={isLoading}
