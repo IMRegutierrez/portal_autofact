@@ -195,7 +195,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setIsReporting(true);
 
         // Reemplaza esta URL con la URL de tu NUEVO Suitelet de reporte
-        const reportSuiteletUrl = 'https://5652668-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=1243&deploy=1&compid=5652668_SB1&ns-at=AAEJ7tMQSluvxAx0dglrmumpS9xTwQaJb_eon29bGYk39sfULVw'; 
+        const reportSuiteletUrl = 'https://5652668-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=962&deploy=1&compid=5652668_SB1&ns-at=AAEJ7tMQBkCbU43reqdwjp0KidG0tL-R2wFeztLDYgVu36xWYEc'; 
 
         const reportData = {
             invoiceData: currentInvoiceData,
