@@ -14,16 +14,16 @@ define(['N/email', 'N/log', 'N/runtime'],
          */
         const onRequest = (scriptContext) => {
             // Configurar encabezados CORS
-            context.response.setHeader({
+            scriptContext.response.setHeader({
                 name: 'Access-Control-Allow-Origin',
                 value: '*' // O tu dominio de Amplify para mayor seguridad
             });
-            context.response.setHeader({
+            scriptContext.response.setHeader({
                 name: 'Access-control-Allow-Headers',
                 value: 'Content-Type'
             });
 
-            if (context.request.method === 'OPTIONS') {
+            if (scriptContext.request.method === 'OPTIONS') {
                 return;
             }
 
@@ -33,8 +33,8 @@ define(['N/email', 'N/log', 'N/runtime'],
 
 
             try {
-                if (context.request.method === 'POST') {
-                    const requestBody = JSON.parse(context.request.body);
+                if (scriptContext.request.method === 'POST') {
+                    const requestBody = JSON.parse(scriptContext.request.body);
                     const { invoiceData, fiscalData, errorMessage, clientEmail } = requestBody;
 
                     if (!invoiceData || !fiscalData || !errorMessage) {
@@ -87,8 +87,8 @@ define(['N/email', 'N/log', 'N/runtime'],
                 responseData.message = 'Ocurrió un error al enviar el reporte: ' + e.message;
             }
 
-            context.response.setHeader({ name: 'Content-Type', value: 'application/json' });
-            context.response.write(JSON.stringify(responseData));
+            scriptContext.response.setHeader({ name: 'Content-Type', value: 'application/json' });
+            scriptContext.response.write(JSON.stringify(responseData));
         }
 
 

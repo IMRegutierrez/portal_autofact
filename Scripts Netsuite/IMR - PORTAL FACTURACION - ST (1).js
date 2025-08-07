@@ -64,6 +64,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                     var invoiceOrCustomerId = context.request.parameters.custpage_invoice_id;
                     var action = context.request.parameters.custpage_action; // 'search' o 'timbrar'
                     var clientId = context.request.parameters.custpage_client_id;
+                    var customerEmail = context.request.parameters.custpage_email_cfdi;
                     var searchId = context.request.parameters.custpage_search_id || null; // ID del cliente, si es necesario
                     //log.error('Solicitud Recibida:', context.request.parameters);
 
@@ -228,16 +229,16 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                     }
 
                     if (action === "timbrar") {
+                        var SENDER_ID = -5; // ID del autor del correo (ej. -5 para el usuario actual)
                         if (!invoiceOrCustomerId) {
                             responseData.message = 'Parámetro incompleto: Se requiere ID de Factura.';
                             context.response.write(JSON.stringify(responseData));
                             return;
                         }
                         var recordType = context.request.parameters.recordType || 'invoice'; // Por defecto, 'invoice'
-                        log.error('params:', context.request.parameters);
                         var usoCfdi = getUsoCfdi(context.request.parameters.custpage_uso_cfdi);
-                        var facturaTimbrar          = record.load({ type: record.Type.INVOICE, id: invoiceOrCustomerId, isDynamic: true });
-                        var subsidiaryTransaccion   = facturaTimbrar.getValue({ fieldId: "subsidiary" });
+                        var facturaTimbrar = record.load({ type: record.Type.INVOICE, id: invoiceOrCustomerId, isDynamic: true });
+                        var subsidiaryTransaccion = facturaTimbrar.getValue({ fieldId: "subsidiary" });
                         facturaTimbrar.setValue({ fieldId: 'custbody_fe_razon_social', value: context.request.parameters.custpage_razon_social });
                         facturaTimbrar.setValue({ fieldId: 'custbody_ce_rfc', value: context.request.parameters.custpage_rfc });
                         facturaTimbrar.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: context.request.parameters.custpage_regimen_fiscal });
@@ -271,9 +272,9 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             id: invoiceOrCustomerId,
                             columns: ['custbody_fe_sf_codigo_respuesta', 'custbody_fe_sf_mensaje_respuesta', 'custbody_fe_sf_xml_sat', 'custbody_fe_sf_pdf']
                         });
-
-                        // Simulación de timbrado exitoso
+                        //Timbrado exitoso
                         if (fieldFe.custbody_fe_sf_codigo_respuesta === 200 || fieldFe.custbody_fe_sf_codigo_respuesta === '200.0') {
+
                             responseData.success = true;
                             responseData.message = fieldFe.custbody_fe_sf_mensaje_respuesta;
 
@@ -289,6 +290,48 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                 inputEncoding: encode.Encoding.UTF_8,
                                 outputEncoding: encode.Encoding.BASE_64
                             });
+
+                            var fieldFe = search.lookupFields({
+                                type: recordType,
+                                id: invoiceOrCustomerId,
+                                columns: ['custbody_fe_sf_codigo_respuesta', 'custbody_fe_sf_mensaje_respuesta', 'custbody_fe_sf_xml_sat', 'custbody_fe_sf_pdf']
+                            });
+
+                            var xmlFileId = fieldFe.custbody_fe_sf_xml_sat ? fieldFe.custbody_fe_sf_xml_sat[0].value : null;
+                            var pdfFileId = fieldFe.custbody_fe_sf_pdf ? fieldFe.custbody_fe_sf_pdf[0].value : null;
+
+                            if (!xmlFileId || !pdfFileId) {
+                                throw new Error("No se encontraron los archivos XML y PDF generados después del timbrado.");
+                            }
+
+                            // --- 3. ENVIAR CORREO AL CLIENTE (SI PROPORCIONÓ UN EMAIL) ---
+                            if (customerEmail) {
+                                // Cargar los archivos para adjuntarlos
+                                var xmlFile = file.load({ id: xmlFileId });
+                                var pdfFile = file.load({ id: pdfFileId });
+
+                                // Opcional: Usar una plantilla de correo para un formato profesional
+                                // const emailTemplateId = 123; // ID de tu plantilla de correo en Netsuite
+                                // const mergeResult = render.mergeEmail({
+                                //     templateId: emailTemplateId,
+                                //     transactionId: parseInt(invoiceInternalId)
+                                // });
+                                // const emailSubject = mergeResult.subject;
+                                // const emailBody = mergeResult.body;
+
+                                email.send({
+                                    author: SENDER_ID,
+                                    recipients: customerEmail,
+                                    // subject: emailSubject || `Su Factura Electrónica ${invoiceInternalId}`,
+                                    // body: emailBody || `Estimado cliente, adjuntamos los archivos de su factura.`,
+                                    subject: 'Su Factura Electrónica de Grupo Premier',
+                                    body: 'Estimado cliente,\n\nAdjuntamos los archivos XML y PDF de su Comprobante Fiscal Digital por Internet (CFDI).\n\nGracias por su preferencia.',
+                                    attachments: [xmlFile, pdfFile],
+                                    relatedRecords: { // Asocia el correo a la transacción en Netsuite
+                                        transactionId: parseInt(invoiceInternalId)
+                                    }
+                                });
+                            }
 
                             responseData.invoiceData = {
                                 xmlUrl: urlXml,
@@ -353,10 +396,10 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
         function getUsoCfdi(usoCfdi) {
             log.error('Uso CFDI buscado', usoCfdi);
             var usoCfdiId = search.create({
-                type: 'customrecord_uso_cfdi_fe_33',  
+                type: 'customrecord_uso_cfdi_fe_33',
                 filters: [
                     ['idtext', 'is', usoCfdi]
-                ],  
+                ],
                 columns: ['internalid']
             }).run().getRange({ start: 0, end: 1 });
             log.error('Uso CFDI encontrado', usoCfdiId);
