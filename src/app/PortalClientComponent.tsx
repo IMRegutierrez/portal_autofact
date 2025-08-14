@@ -9,18 +9,19 @@ import Loader from './components/Loader';
 
 // --- Definición de Tipos (Interfaces) ---
 interface ClientConfig {
-    clientId: string;
-    suiteletUrl: string;
-    netsuiteCompId: string;
-    clientName: string;
-    logoUrl?: string;
-    backgroundColor?: string;
-    cardBackgroundColor?: string;
-    primaryTextColor?: string;
-    secondaryTextColor?: string;
-    buttonColor?: string;
-    buttonTextColor?: string;
-    searchId?: string;
+  clientId: string;
+  suiteletUrl: string; // URL para búsqueda y timbrado
+  netsuiteCompId: string;
+  clientName: string;
+  logoUrl?: string; 
+  backgroundColor?: string;
+  cardBackgroundColor?: string;
+  primaryTextColor?: string;
+  secondaryTextColor?: string;
+  buttonColor?: string;
+  buttonTextColor?: string;
+  searchId?: string;
+  reportSuiteletUrl?: string;
 }
 interface LineItem {
     description: string;
@@ -60,19 +61,18 @@ interface FiscalData {
     usoCfdi: string;
 }
 
-// --- Componente Principal del Cliente ---
+
 export default function PortalClientComponent({ config }: { config: ClientConfig }) {
     const [isLoading, setIsLoading] = useState(false);
-    const [isReporting, setIsReporting] = useState(false); // Nuevo estado para el reporte
+    const [isReporting, setIsReporting] = useState(false);
     const [currentInvoiceData, setCurrentInvoiceData] = useState<InvoiceData | null>(null);
     const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
     const [showFiscalForm, setShowFiscalForm] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
-    const [showReportButton, setShowReportButton] = useState(false); // Nuevo estado para el botón
+    const [showReportButton, setShowReportButton] = useState(false);
     const [cfdiLinks, setCfdiLinks] = useState({ xmlUrl: null, pdfUrl: null });
     const [mockSavedFiscalData, setMockSavedFiscalData] = useState<{ [key: string]: any }>({});
-    // --- CORRECCIÓN AQUÍ: Se restaura la definición del estado ---
     const [collectedFiscalData, setCollectedFiscalData] = useState<FiscalData | null>(null);
 
     const theme = {
@@ -86,7 +86,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
 
     const displayModal = (message: string, isReportableError: boolean = false) => {
         setModalMessage(message);
-        setShowReportButton(isReportableError); // Mostrar el botón solo si es un error reportable
+        setShowReportButton(isReportableError && !!config.reportSuiteletUrl);
         setShowModal(true);
     };
 
@@ -96,7 +96,6 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setShowInvoiceDetails(false);
         setShowFiscalForm(false);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
-        setCollectedFiscalData(null);
 
         const formData = new FormData();
         formData.append('custpage_invoice_id', searchParams.invoiceOrCustomerId);
@@ -143,7 +142,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         }
         setIsLoading(true);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
-        setCollectedFiscalData(fiscalDataFromForm); // Guardar los datos fiscales ingresados
+        setCollectedFiscalData(fiscalDataFromForm);
 
         const formData = new FormData();
         formData.append('custpage_action', 'timbrar');
@@ -192,10 +191,14 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             displayModal("No hay suficiente información para enviar el reporte.");
             return;
         }
+        // --- CAMBIO AQUÍ: Se verifica si la URL de reporte está configurada ---
+        if (!config.reportSuiteletUrl) {
+            displayModal("La función para reportar problemas no está configurada. Por favor, contacte a soporte directamente.");
+            return;
+        }
         setIsReporting(true);
 
-        // Reemplaza esta URL con la URL de tu NUEVO Suitelet de reporte
-        const reportSuiteletUrl = 'https://5652668-sb1.extforms.netsuite.com/app/site/hosting/scriptlet.nl?script=962&deploy=1&compid=5652668_SB1&ns-at=AAEJ7tMQBkCbU43reqdwjp0KidG0tL-R2wFeztLDYgVu36xWYEc'; 
+        const reportSuiteletUrl = config.reportSuiteletUrl; // Se usa la URL de la configuración
 
         const reportData = {
             invoiceData: currentInvoiceData,
