@@ -34,18 +34,44 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
         regimenFiscal: '',
         usoCfdi: '',
     });
+    // --- NUEVO ESTADO PARA EL ERROR DEL RFC ---
+    const [rfcError, setRfcError] = useState<string | null>(null);
 
     useEffect(() => {
         setFormData(prev => ({ ...prev, ...initialData }));
     }, [initialData]);
 
+    // --- FUNCIÓN DE VALIDACIÓN DE RFC ---
+    const validateRfc = (rfc: string): boolean => {
+        if (!rfc) return false;
+        // Expresión regular para validar RFC de personas físicas (13 caracteres) y morales (12 caracteres)
+        const rfcRegex = /^[A-Z&Ñ]{4}[0-9]{2}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}$|^[A-Z&Ñ]{3}[0-9]{2}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}$/;
+        return rfcRegex.test(rfc);
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'rfc' ? value.toUpperCase() : value }));
+        const upperValue = name === 'rfc' ? value.toUpperCase() : value;
+        
+        setFormData(prev => ({ ...prev, [name]: upperValue }));
+
+        // --- VALIDACIÓN EN TIEMPO REAL ---
+        if (name === 'rfc') {
+            if (upperValue.length > 0 && !validateRfc(upperValue)) {
+                setRfcError('El formato del RFC no es válido.');
+            } else {
+                setRfcError(null);
+            }
+        }
     };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        // --- VALIDACIÓN FINAL ANTES DE ENVIAR ---
+        if (!validateRfc(formData.rfc)) {
+            setRfcError('El formato del RFC no es válido. Por favor, corrígelo para continuar.');
+            return; // Detiene el envío del formulario
+        }
         onSubmit(formData);
     };
     
@@ -71,7 +97,21 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 </div>
                 <div>
                     <label htmlFor="rfc" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>RFC</label>
-                    <input type="text" id="rfc" name="rfc" value={formData.rfc} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg uppercase" placeholder="Ej: XAXX010101000" disabled={isLoading}/>
+                    <input 
+                        type="text" 
+                        id="rfc" 
+                        name="rfc" 
+                        value={formData.rfc} 
+                        onChange={handleChange} 
+                        required 
+                        style={inputStyle} 
+                        className="w-full px-4 py-3 rounded-lg uppercase" 
+                        placeholder="Ej: XAXX010101000" 
+                        disabled={isLoading}
+                        maxLength={13} // Límite de caracteres
+                    />
+                    {/* --- MENSAJE DE ERROR CONDICIONAL --- */}
+                    {rfcError && <p className="text-red-800 text-xs font-semibold mt-1">{rfcError}</p>}
                 </div>
                 <div>
                     <label htmlFor="emailCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Email para envío de CFDI</label>
