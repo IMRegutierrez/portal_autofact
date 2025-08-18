@@ -5,6 +5,7 @@ interface FiscalData {
     razonSocial: string;
     rfc: string;
     emailCfdi: string;
+    telefono?: string; 
     domicilioFiscal: string;
     codigoPostalFiscal: string;
     regimenFiscal: string;
@@ -116,6 +117,22 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 <div>
                     <label htmlFor="emailCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Email para envío de CFDI</label>
                     <input type="email" id="emailCfdi" name="emailCfdi" value={formData.emailCfdi} onChange={handleChange} style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="correo@ejemplo.com (opcional)" disabled={isLoading}/>
+                </div>
+                {/* --- NUEVO CAMPO TELEFÓNICO --- */}
+                <div>
+                    <label htmlFor="telefono" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Número Telefónico</label>
+                    <input 
+                        type="tel" 
+                        id="telefono" 
+                        name="telefono" 
+                        value={formData.telefono} 
+                        onChange={handleChange} 
+                        style={inputStyle} 
+                        className="w-full px-4 py-3 rounded-lg" 
+                        placeholder="10 dígitos (opcional)" 
+                        disabled={isLoading}
+                        maxLength={10}
+                    />
                 </div>
                 <div>
                     <label htmlFor="domicilioFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Domicilio Fiscal Receptor</label>
