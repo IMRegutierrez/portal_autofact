@@ -10,6 +10,7 @@ interface FiscalData {
     codigoPostalFiscal: string;
     regimenFiscal: string;
     usoCfdi: string;
+    confirmedFromPortal?: boolean; // Se añade una bandera opcional para la confirmación
 }
 interface Theme {
     textPrimary: string;
@@ -30,6 +31,7 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
         razonSocial: '',
         rfc: '',
         emailCfdi: '',
+        telefono: '',
         domicilioFiscal: '',
         codigoPostalFiscal: '',
         regimenFiscal: '',
@@ -37,6 +39,8 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
     });
     // --- NUEVO ESTADO PARA EL ERROR DEL RFC ---
     const [rfcError, setRfcError] = useState<string | null>(null);
+    // --- NUEVO ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     useEffect(() => {
         setFormData(prev => ({ ...prev, ...initialData }));
@@ -71,9 +75,17 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
         // --- VALIDACIÓN FINAL ANTES DE ENVIAR ---
         if (!validateRfc(formData.rfc)) {
             setRfcError('El formato del RFC no es válido. Por favor, corrígelo para continuar.');
-            return; // Detiene el envío del formulario
+            return;
         }
-        onSubmit(formData);
+        // --- MUESTRA EL MODAL EN LUGAR DE ENVIAR DIRECTAMENTE ---
+        setShowConfirmModal(true);
+    };
+
+    // --- NUEVA FUNCIÓN PARA EL ENVÍO FINAL ---
+    const handleFinalSubmit = () => {
+        setShowConfirmModal(false);
+        // --- CAMBIO AQUÍ: Se añade la bandera de confirmación al enviar los datos ---
+        onSubmit({ ...formData, confirmedFromPortal: true });
     };
     
     const inputStyle = {
@@ -109,16 +121,14 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                         className="w-full px-4 py-3 rounded-lg uppercase" 
                         placeholder="Ej: XAXX010101000" 
                         disabled={isLoading}
-                        maxLength={13} // Límite de caracteres
+                        maxLength={13}
                     />
-                    {/* --- MENSAJE DE ERROR CONDICIONAL --- */}
                     {rfcError && <p className="text-red-800 text-xs font-semibold mt-1">{rfcError}</p>}
                 </div>
                 <div>
                     <label htmlFor="emailCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Email para envío de CFDI</label>
                     <input type="email" id="emailCfdi" name="emailCfdi" value={formData.emailCfdi} onChange={handleChange} style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="correo@ejemplo.com (opcional)" disabled={isLoading}/>
                 </div>
-                {/* --- NUEVO CAMPO TELEFÓNICO --- */}
                 <div>
                     <label htmlFor="telefono" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Número Telefónico</label>
                     <input 
@@ -177,6 +187,31 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                     {isLoading ? 'Procesando...' : 'Generar CFDI'}
                 </button>
             </form>
+
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                    <div className="bg-white p-8 rounded-lg shadow-2xl text-center max-w-sm w-full mx-4">
+                        <h4 className="text-xl font-bold text-gray-800 mb-4">Confirmar Datos</h4>
+                        <p className="text-gray-600 mb-6">¿Estás seguro de que los datos fiscales ingresados son correctos?</p>
+                        <div className="flex justify-center gap-4">
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleFinalSubmit}
+                                className="px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors"
+                            >
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

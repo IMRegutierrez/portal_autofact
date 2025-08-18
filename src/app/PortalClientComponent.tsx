@@ -10,7 +10,7 @@ import Loader from './components/Loader';
 // --- Definición de Tipos (Interfaces) ---
 interface ClientConfig {
   clientId: string;
-  suiteletUrl: string; // URL para búsqueda y timbrado
+  suiteletUrl: string;
   netsuiteCompId: string;
   clientName: string;
   logoUrl?: string; 
@@ -55,13 +55,15 @@ interface FiscalData {
     razonSocial: string;
     rfc: string;
     emailCfdi: string;
+    telefono?: string;
     domicilioFiscal: string;
     codigoPostalFiscal: string;
     regimenFiscal: string;
     usoCfdi: string;
+    confirmedFromPortal?: boolean; // Se añade la bandera opcional
 }
 
-
+// --- Componente Principal del Cliente ---
 export default function PortalClientComponent({ config }: { config: ClientConfig }) {
     const [isLoading, setIsLoading] = useState(false);
     const [isReporting, setIsReporting] = useState(false);
@@ -155,10 +157,18 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         formData.append('custpage_razon_social', fiscalDataFromForm.razonSocial);
         formData.append('custpage_rfc', fiscalDataFromForm.rfc);
         formData.append('custpage_email_cfdi', fiscalDataFromForm.emailCfdi);
+        // Se usa || '' para asegurar que se envíe un string vacío si el campo es opcional y no se llenó.
+        formData.append('custpage_telefono', fiscalDataFromForm.telefono || '');
         formData.append('custpage_domicilio_fiscal', fiscalDataFromForm.domicilioFiscal);
         formData.append('custpage_codigo_postal_fiscal', fiscalDataFromForm.codigoPostalFiscal);
         formData.append('custpage_regimen_fiscal', fiscalDataFromForm.regimenFiscal);
         formData.append('custpage_uso_cfdi', fiscalDataFromForm.usoCfdi);
+
+        // --- CAMBIO AQUÍ: Se añade el nuevo campo si la confirmación vino del portal ---
+        if (fiscalDataFromForm.confirmedFromPortal) {
+            // En Netsuite, los checkboxes suelen usar 'T' para verdadero (true) y 'F' para falso (false).
+            formData.append('custpage_portal_confirmation', 'T'); // Reemplaza 'custpage_portal_confirmation' con el ID de tu campo
+        }
 
         try {
             const response = await fetch(config.suiteletUrl,{
@@ -175,7 +185,6 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 setShowFiscalForm(false);
                 setShowInvoiceDetails(false);
             } else {
-                // --- CAMBIO AQUÍ: Se indica que es un error reportable ---
                 displayModal(data.message || "Ocurrió un error durante el timbrado.", true);
             }
         } catch (error: any) {
@@ -193,13 +202,14 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         }
         // --- CAMBIO AQUÍ: Se verifica si la URL de reporte está configurada ---
         if (!config.reportSuiteletUrl) {
-            displayModal("La función para reportar problemas no está configurada. Por favor, contacte a soporte directamente.");
+            displayModal("La función para reportar problemas no está configurada.");
             return;
         }
         setIsReporting(true);
 
         const reportSuiteletUrl = config.reportSuiteletUrl; // Se usa la URL de la configuración
 
+        // El objeto 'collectedFiscalData' ya contiene el teléfono, por lo que se enviará automáticamente.
         const reportData = {
             invoiceData: currentInvoiceData,
             fiscalData: collectedFiscalData,
