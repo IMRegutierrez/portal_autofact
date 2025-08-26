@@ -14,6 +14,7 @@ interface ClientConfig {
   netsuiteCompId: string;
   clientName: string;
   logoUrl?: string; 
+  logoHeight?: string; // Se añade el campo opcional para la altura del logo
   backgroundColor?: string;
   cardBackgroundColor?: string;
   primaryTextColor?: string;
@@ -60,7 +61,7 @@ interface FiscalData {
     codigoPostalFiscal: string;
     regimenFiscal: string;
     usoCfdi: string;
-    confirmedFromPortal?: boolean; // Se añade la bandera opcional
+    confirmedFromPortal?: boolean;
 }
 
 // --- Componente Principal del Cliente ---
@@ -76,6 +77,9 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
     const [cfdiLinks, setCfdiLinks] = useState({ xmlUrl: null, pdfUrl: null });
     const [mockSavedFiscalData, setMockSavedFiscalData] = useState<{ [key: string]: any }>({});
     const [collectedFiscalData, setCollectedFiscalData] = useState<FiscalData | null>(null);
+
+    // Se define el tamaño del logo dinámicamente, con un valor por defecto.
+    const logoSizeClass = config.logoHeight || 'h-64';
 
     const theme = {
         background: config.backgroundColor || '#FFFFFF',
@@ -246,15 +250,20 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             </Head>
             <div style={{ backgroundColor: theme.cardBackground }} className="w-full max-w-2xl shadow-2xl rounded-xl p-6 md:p-10">
                 <header className="text-center mb-8">
-                    {config.logoUrl ? (
-                        <img
-                            src={config.logoUrl}
-                            alt={`Logo de ${config.clientName}`}
-                            className="h-64 w-auto mx-auto object-contain"
+                     {config.logoUrl ? (
+                        <img 
+                            src={config.logoUrl} 
+                            alt={`Logo de ${config.clientName}`} 
+                            // --- CAMBIO AQUÍ: Se usa la clase de tamaño dinámica ---
+                            className={`${logoSizeClass} w-auto mx-auto object-contain`} 
                         />
-                    ) : (
-                        <svg style={{ color: theme.textPrimary }} className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    )}
+                     ) : (
+                        <svg 
+                            style={{ color: theme.textPrimary }} 
+                            // --- CAMBIO AQUÍ: Se usa la clase de tamaño dinámica ---
+                            className={`${logoSizeClass} w-auto mx-auto`} 
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                     )}
                     <h1 style={{ color: theme.textPrimary }} className="text-3xl font-bold pt-4">{config.clientName || 'Portal de Autofacturación'}</h1>
                     <p style={{ color: theme.textSecondary }} className="mt-2">Consulta facturas y genera tu CFDI.</p>
                 </header>
