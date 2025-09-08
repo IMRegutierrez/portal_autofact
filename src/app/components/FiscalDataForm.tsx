@@ -154,7 +154,7 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 </div>
                 <div>
                     <label htmlFor="regimenFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Régimen Fiscal Receptor</label>
-                    <select id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
+                    <select id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg text-black" disabled={isLoading}>
                         <option value="">Seleccione un régimen...</option>
                         <option value="601">General de Ley Personas Morales</option>
                         <option value="603">Personas Morales con Fines no Lucrativos</option>
@@ -168,7 +168,7 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 </div>
                 <div>
                     <label htmlFor="usoCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Uso de CFDI</label>
-                    <select id="usoCfdi" name="usoCfdi" value={formData.usoCfdi} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
+                    <select id="usoCfdi" name="usoCfdi" value={formData.usoCfdi} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg text-black" disabled={isLoading}>
                         <option value="">Seleccione un uso...</option>
                         <option value="S01">Sin efectos fiscales</option>
                         <option value="G01">Adquisición de mercancías</option>
@@ -178,12 +178,8 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                         <option value="P01">Por definir</option>
                     </select>
                 </div>
-                <button 
-                    type="submit" 
-                    disabled={isLoading}
-                    style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }}
-                    className="w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
-                >
+
+                <button type="submit" disabled={isLoading || !!rfcError} style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }} className={`w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90 ${isLoading || rfcError ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     {isLoading ? 'Procesando...' : 'Generar CFDI'}
                 </button>
             </form>
