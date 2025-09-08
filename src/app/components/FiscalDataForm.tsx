@@ -10,7 +10,7 @@ interface FiscalData {
     codigoPostalFiscal: string;
     regimenFiscal: string;
     usoCfdi: string;
-    confirmedFromPortal?: boolean; // Se añade una bandera opcional para la confirmación
+    confirmedFromPortal?: boolean;
 }
 interface Theme {
     textPrimary: string;
@@ -18,24 +18,32 @@ interface Theme {
     button: string;
     buttonText: string;
 }
+// --- NUEVA INTERFAZ PARA LOS CATÁLOGOS ---
+interface CatalogOption {
+    clave: string;
+    descripcion: string;
+}
 interface FiscalDataFormProps {
     invoiceNumberForContext: string;
     initialData: Partial<FiscalData>;
     onSubmit: (data: FiscalData) => void;
     isLoading: boolean;
     theme: Theme;
+    // --- NUEVAS PROPS PARA LOS CATÁLOGOS ---
+    regimenesFiscales: CatalogOption[];
+    usosCfdi: CatalogOption[];
 }
 
-export default function FiscalDataForm({ invoiceNumberForContext, initialData, onSubmit, isLoading, theme }: FiscalDataFormProps) {
+export default function FiscalDataForm({ invoiceNumberForContext, initialData, onSubmit, isLoading, theme, regimenesFiscales, usosCfdi }: FiscalDataFormProps) {
     const [formData, setFormData] = useState<FiscalData>({
-        razonSocial: '',
-        rfc: '',
-        emailCfdi: '',
-        telefono: '',
-        domicilioFiscal: '',
-        codigoPostalFiscal: '',
-        regimenFiscal: '',
-        usoCfdi: '',
+        razonSocial: initialData.razonSocial || '',
+        rfc: initialData.rfc || '',
+        emailCfdi: initialData.emailCfdi || '',
+        telefono: initialData.telefono || '',
+        domicilioFiscal: initialData.domicilioFiscal || '',
+        codigoPostalFiscal: initialData.codigoPostalFiscal || '',
+        regimenFiscal: initialData.regimenFiscal || '',
+        usoCfdi: initialData.usoCfdi || '',
     });
     // --- NUEVO ESTADO PARA EL ERROR DEL RFC ---
     const [rfcError, setRfcError] = useState<string | null>(null);
@@ -43,7 +51,17 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
     const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     useEffect(() => {
-        setFormData(prev => ({ ...prev, ...initialData }));
+        setFormData(prev => ({ 
+            ...prev, 
+            razonSocial: initialData.razonSocial || '',
+            rfc: initialData.rfc || '',
+            emailCfdi: initialData.emailCfdi || '',
+            telefono: initialData.telefono || '',
+            domicilioFiscal: initialData.domicilioFiscal || '',
+            codigoPostalFiscal: initialData.codigoPostalFiscal || '',
+            regimenFiscal: initialData.regimenFiscal || '',
+            usoCfdi: initialData.usoCfdi || '',
+        }));
     }, [initialData]);
 
     // --- FUNCIÓN DE VALIDACIÓN DE RFC ---
@@ -110,19 +128,7 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 </div>
                 <div>
                     <label htmlFor="rfc" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>RFC</label>
-                    <input 
-                        type="text" 
-                        id="rfc" 
-                        name="rfc" 
-                        value={formData.rfc} 
-                        onChange={handleChange} 
-                        required 
-                        style={inputStyle} 
-                        className="w-full px-4 py-3 rounded-lg uppercase" 
-                        placeholder="Ej: XAXX010101000" 
-                        disabled={isLoading}
-                        maxLength={13}
-                    />
+                    <input type="text" id="rfc" name="rfc" value={formData.rfc} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg uppercase" placeholder="Ej: XAXX010101000" disabled={isLoading} maxLength={13} />
                     {rfcError && <p className="text-red-800 text-xs font-semibold mt-1">{rfcError}</p>}
                 </div>
                 <div>
@@ -131,18 +137,7 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 </div>
                 <div>
                     <label htmlFor="telefono" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Número Telefónico</label>
-                    <input 
-                        type="tel" 
-                        id="telefono" 
-                        name="telefono" 
-                        value={formData.telefono} 
-                        onChange={handleChange} 
-                        style={inputStyle} 
-                        className="w-full px-4 py-3 rounded-lg" 
-                        placeholder="10 dígitos (opcional)" 
-                        disabled={isLoading}
-                        maxLength={10}
-                    />
+                    <input type="tel" id="telefono" name="telefono" value={formData.telefono} onChange={handleChange} style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="10 dígitos (opcional)" disabled={isLoading} maxLength={10} />
                 </div>
                 <div>
                     <label htmlFor="domicilioFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Domicilio Fiscal Receptor</label>
@@ -150,40 +145,30 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 </div>
                 <div>
                     <label htmlFor="codigoPostalFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Código Postal (Receptor)</label>
-                    <input type="text" id="codigoPostalFiscal" name="codigoPostalFiscal" value={formData.codigoPostalFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="Ej: 06600" disabled={isLoading}/>
+                    <input type="text" id="codigoPostalFiscal" name="codigoPostalFiscal" value={formData.codigoPostalFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="Ej: 06600" disabled={isLoading} maxLength={5} />
                 </div>
+                
+                {/* --- CAMBIOS PARA CATÁLOGOS DINÁMICOS Y FIX DE WINDOWS --- */}
                 <div>
                     <label htmlFor="regimenFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Régimen Fiscal Receptor</label>
-                    <select id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
-                        <option value="">Seleccione un régimen...</option>
-                        <option value="601">General de Ley Personas Morales</option>
-                        <option value="603">Personas Morales con Fines no Lucrativos</option>
-                        <option value="605">Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
-                        <option value="606">Arrendamiento</option>
-                        <option value="612">Personas Físicas con Actividades Empresariales y Profesionales</option>
-                        <option value="616">Sin obligaciones fiscales</option>
-                        <option value="621">Incorporación Fiscal</option>
-                        <option value="626">Régimen Simplificado de Confianza</option>
+                    <select id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg text-black" disabled={isLoading}>
+                        <option value="" disabled>Seleccione un régimen...</option>
+                        {regimenesFiscales.map(regimen => (
+                            <option key={regimen.clave} value={regimen.clave}>{regimen.descripcion}</option>
+                        ))}
                     </select>
                 </div>
                 <div>
                     <label htmlFor="usoCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Uso de CFDI</label>
-                    <select id="usoCfdi" name="usoCfdi" value={formData.usoCfdi} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
-                        <option value="">Seleccione un uso...</option>
-                        <option value="S01">Sin efectos fiscales</option>
-                        <option value="G01">Adquisición de mercancías</option>
-                        <option value="G03">Gastos en general</option>
-                        <option value="I01">Construcciones</option>
-                        <option value="I08">Otra maquinaria y equipo</option>
-                        <option value="P01">Por definir</option>
+                    <select id="usoCfdi" name="usoCfdi" value={formData.usoCfdi} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg text-black" disabled={isLoading}>
+                        <option value="" disabled>Seleccione un uso...</option>
+                        {usosCfdi.map(uso => (
+                            <option key={uso.clave} value={uso.clave}>{uso.descripcion}</option>
+                        ))}
                     </select>
                 </div>
-                <button 
-                    type="submit" 
-                    disabled={isLoading}
-                    style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }}
-                    className="w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
-                >
+
+                <button type="submit" disabled={isLoading || !!rfcError} style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }} className={`w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90 ${isLoading || rfcError ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     {isLoading ? 'Procesando...' : 'Generar CFDI'}
                 </button>
             </form>
@@ -215,3 +200,4 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
         </div>
     );
 }
+
