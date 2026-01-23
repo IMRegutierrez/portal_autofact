@@ -21,7 +21,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme }: Invoic
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!invoiceOrCustomerId) {
-            alert("Por favor, ingresa el Número de Factura o ID de Cliente.");
+            alert("Por favor, ingresa el número de folio.");
             return;
         }
         onSearch({ invoiceOrCustomerId });

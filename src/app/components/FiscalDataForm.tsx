@@ -100,7 +100,7 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                 Datos Fiscales para CFDI
             </h3>
             <p className="mb-6" style={{ color: theme.textSecondary }}>
-                Factura: {invoiceNumberForContext}
+                Folio: {invoiceNumberForContext}
             </p>
             
             <form onSubmit={handleSubmit} className="space-y-5">

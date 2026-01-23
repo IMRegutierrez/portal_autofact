@@ -120,16 +120,16 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             const data = await response.json();
             
             if (data && data.invoiceData && data.invoiceData.isStamped) {
-                displayModal(data.message || 'Esta factura ya ha sido timbrada anteriormente.');
+                displayModal(data.message || 'Este folio ya ha sido timbrada anteriormente.');
                 setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
             } else if (data && data.success && data.invoiceData) {
                 setCurrentInvoiceData(data.invoiceData);
                 setShowInvoiceDetails(true);
             } else {
-                displayModal(data.message || 'Factura no encontrada o datos incorrectos.');
+                displayModal(data.message || 'Folio no encontrado o datos incorrectos.');
             }
         } catch (error: any) {
-            displayModal(`Error al buscar factura: ${error.message}`);
+            displayModal(`Error al buscar folio: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -143,7 +143,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
 
     const handleFiscalDataSubmit = async (fiscalDataFromForm: FiscalData) => {
         if (!currentInvoiceData || !currentInvoiceData.internalId) {
-            displayModal("Error: No hay una factura activa para procesar.");
+            displayModal("Error: No hay una folio activa para procesar.");
             return;
         }
         setIsLoading(true);
@@ -265,7 +265,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                             fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                      )}
                     <h1 style={{ color: theme.textPrimary }} className="text-3xl font-bold pt-4">{config.clientName || 'Portal de Autofacturación'}</h1>
-                    <p style={{ color: theme.textSecondary }} className="mt-2">Consulta facturas y genera tu CFDI.</p>
+                    <p style={{ color: theme.textSecondary }} className="mt-2">Consulta folios y genera tu CFDI.</p>
                 </header>
 
                 <InvoiceSearchForm
