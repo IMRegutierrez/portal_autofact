@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file', 'N/config'],
+define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file', 'N/config', 'N/email', 'N/render'],
     /**
      * @param {search} search
      * @param {record} record
@@ -14,7 +14,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
      * @param {file} file
      * @param {config} config
      */
-    function (search, record, log, url, https, encode, file, config) {
+    function (search, record, log, url, https, encode, file, config, email, render) {
         /**
          * Definition of the Suitelet script trigger point.
          *
@@ -75,161 +75,19 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             return;
                         } else {
                             // --- Lógica de Búsqueda ---
-                            var filters = [];
                             var invoiceSearch;
 
                             if (searchId) {
-                                invoiceSearch = search.load({ id: searchId });
-                                invoiceSearch.filters = invoiceSearch.filters || [];
-                                invoiceSearch.columns = invoiceSearch.columns || [];
-                                // Aquí podrías añadir filtros adicionales si es necesario
-                                invoiceSearch.filters = invoiceSearch.filters.concat([
-                                    search.createFilter({
-                                        name: 'custbody_pos3_receiptnumber', // O 'invoicenumber' si ese es el campo que usas
-                                        operator: search.Operator.IS,
-                                        values: invoiceOrCustomerId
-                                    })
-                                ]);
+                                invoiceSearch = getSearchFromId(searchId, invoiceOrCustomerId);
                             } else {
-                                filters.push(search.createFilter({
-                                    name: 'tranid', // O 'invoicenumber' si ese es el campo que usas
-                                    operator: search.Operator.IS,
-                                    values: invoiceOrCustomerId
-                                }));
-                                // Asumimos que el código postal está en la dirección de facturación del cliente en la factura
-                                // Esto puede variar. Podría ser 'billzip', 'shipzip', o un campo personalizado.
-                                // También podrías necesitar buscar en el registro del cliente asociado.
-
-                                filters.push(search.createFilter({ // Asegurar que sea una factura de venta
-                                    name: 'type',
-                                    operator: search.Operator.ANYOF,
-                                    values: ['CustInvc']
-                                }));
-                                filters.push(search.createFilter({ // Considerar solo la línea principal
-                                    name: 'mainline',
-                                    operator: search.Operator.IS,
-                                    values: 'T' // O 'F' si necesitas detalles de líneas específicas
-                                }));
-
-
-                                invoiceSearch = search.create({
-                                    type: search.Type.INVOICE, // O 'transaction' si es más general
-                                    filters: filters,
-                                    columns: [
-                                        search.createColumn({ name: 'tranid' }), // Número de Factura
-                                        search.createColumn({ name: 'entity', label: 'CustomerInternalId' }), // ID Interno del Cliente
-                                        search.createColumn({ name: 'companyname', join: 'customer', label: 'CustomerName' }), // Nombre del Cliente
-                                        search.createColumn({ name: 'trandate' }), // Fecha de Emisión
-                                        search.createColumn({ name: 'duedate' }), // Fecha de Vencimiento
-                                        search.createColumn({ name: 'total' }), // Monto Total
-                                        search.createColumn({ name: 'custbody_fe_razon_social' }), // Monto Total
-                                        search.createColumn({ name: 'custbody_ce_rfc' }), // RFC cliente
-                                        search.createColumn({ name: 'custbodyimr_regimenfiscalreceptor' }), // Monto Total
-                                        search.createColumn({ name: 'custbody_uso_cfdi_fe_imr_33' }), // Monto Total
-                                        search.createColumn({ name: 'custbody_forma_pago_fe_imr_33' }), // Monto Total
-                                        search.createColumn({ name: 'custbody_fe_metodo_de_pago' }), // Monto Total
-                                        search.createColumn({ name: 'billaddress' }), // Monto Total
-                                        search.createColumn({ name: 'custbody_domiciliofiscalreceptor' }), // Monto Total
-                                        search.createColumn({ name: 'subsidiary' }), // Monto Total
-                                        search.createColumn({ name: 'custbody_fe_sf_codigo_respuesta' }), //Codigo de respuesta del timbrado
-                                        search.createColumn({ name: 'custbody_fe_sf_xml_sat' }), //Codigo de respuesta del timbrado
-                                        search.createColumn({ name: 'custbody_fe_sf_pdf' }), //Codigo de respuesta del timbrado
-                                        // Podrías necesitar más columnas para los conceptos, lo que haría la búsqueda más compleja
-                                        // o requeriría cargar el registro de la factura después.
-                                    ]
-                                });
+                                invoiceSearch = getSearchFromParams(invoiceOrCustomerId);
                             }
-                            var searchResult = invoiceSearch.run().getRange({ start: 0, end: 1 }); // Tomar solo el primer resultado
-
-                            if (searchResult && searchResult.length > 0) {
-                                var result = searchResult[0];
-                                var invoiceRecordId = result.id; // ID interno de la factura encontrada
-                                var codResp = result.getValue({ name: 'custbody_fe_sf_codigo_respuesta' }) || '';
-                                if (codResp == '200.0' || codResp == '200') {
-                                    var xmlSat = result.getValue({ name: 'custbody_fe_sf_xml_sat' }) || '';
-                                    var pdf = result.getValue({ name: 'custbody_fe_sf_pdf' }) || '';
-                                    var xmlFile = file.load({
-                                        id: xmlSat  // Cargar el archivo XML del SAT
-                                    });
-                                    var pdfFile = file.load({
-                                        id: pdf  // Cargar el archivo PDF   
-                                    });
-                                    var configRecObj = config.load({
-                                        type: config.Type.COMPANY_INFORMATION
-                                    });
-                                    var accountId = '5652668-sb1' || configRecObj.getValue('companyid');
-
-
-
-                                    var domain = 'https://' + accountId + '.app.netsuite.com'
-
-                                    responseData.message = 'La factura ya ha sido timbrada.';
-                                    responseData.invoiceData = {
-                                        isStamped: true,
-                                        xmlUrl: domain + xmlFile.url, // URL del XML
-                                        pdfUrl: domain + pdfFile.url, // URL del PDF
-                                    }
-                                    context.response.write(JSON.stringify(responseData));
-                                    return;
-                                }
-
-                                // Para obtener los conceptos (line items), usualmente necesitas cargar el registro
-                                var lineItems = [];
-                                var invoiceRecord = record.load({
-                                    type: record.Type.INVOICE,
-                                    id: invoiceRecordId,
-                                    isDynamic: false
-                                });
-
-                                var numLines = invoiceRecord.getLineCount({ sublistId: 'item' });
-                                for (var i = 0; i < numLines; i++) {
-                                    lineItems.push({
-                                        description: invoiceRecord.getSublistText({ sublistId: 'item', fieldId: 'item', line: i }) + " (" + invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }) + ")",
-                                        quantity: invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'quantity', line: i }),
-                                        unitPrice: invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'rate', line: i }),
-                                        total: invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i })
-                                    });
-                                }
-
-                                var customerData = record.load({
-                                    type: record.Type.CUSTOMER,
-                                    id: result.getValue({ name: 'entity' }),
-                                    isDynamic: false
-                                });
-                                // Aquí podrías extraer más información del cliente si es necesario
-                                var razonSocial = customerData.getValue({ fieldId: 'custentity_razon_social' }) || customerData.getValue({ fieldId: 'companyname' });
-                                var rfc = customerData.getValue({ fieldId: 'custentity_ce_rfc' }) || customerData.getValue({ fieldId: 'vatregnumber' });
-
-                                responseData.success = true;
-                                responseData.message = 'Factura encontrada.';
-                                responseData.invoiceData = {
-                                    invoiceNumber: result.getValue('tranid'),
-                                    internalId: result.id,
-                                    // customerId: result.getValue('entity'), // Este es el ID interno
-                                    customerName: result.getText('entity') || result.getValue({ name: 'companyname', join: 'customer' }), // Nombre del cliente
-                                    subsidiaryId: result.getValue('subsidiary'),
-                                    issueDate: result.getValue('trandate'),
-                                    dueDate: result.getValue('duedate'),
-                                    totalAmount: parseFloat(result.getValue('total')).toFixed(2), // Formatear a 2 decimales
-                                    razonSocial: result.getValue('custbody_fe_razon_social'),
-                                    rfc: result.getValue('custbody_ce_rfc'),
-                                    regimenFiscal: result.getText('custbodyimr_regimenfiscalreceptor'),
-                                    usoCfdi: result.getText('custbody_uso_cfdi_fe_imr_33'),
-                                    formaPago: result.getText('custbody_forma_pago_fe_imr_33'),
-                                    metodoPago: result.getText('custbody_fe_metodo_de_pago'),
-                                    domicilioFiscal: invoiceRecord.getText('billaddress'),
-                                    codigoPostalFiscal: invoiceRecord.getText('custbody_domiciliofiscalreceptor'),
-                                    lineItems: lineItems,
-                                };
-                            } else {
-                                responseData.message = 'Factura no encontrada o los datos no coinciden.';
-                                log.audit('Búsqueda sin resultados', 'Criterios: ' + JSON.stringify(filters));
-                            }
+                            var searchResult = getSearchResults(invoiceSearch);
                         }
                     }
 
                     if (action === "timbrar") {
-                        var SENDER_ID = -5; // ID del autor del correo (ej. -5 para el usuario actual)
+                        var SENDER_ID = 4; // ID del autor del correo (ej. -5 para el usuario actual)
                         if (!invoiceOrCustomerId) {
                             responseData.message = 'Parámetro incompleto: Se requiere ID de Factura.';
                             context.response.write(JSON.stringify(responseData));
@@ -244,6 +102,8 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         facturaTimbrar.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: context.request.parameters.custpage_regimen_fiscal });
                         facturaTimbrar.setValue({ fieldId: 'custbody_uso_cfdi_fe_imr_33', value: usoCfdi });
                         facturaTimbrar.setValue({ fieldId: 'custbody_codigo_postal_fiscal', value: context.request.parameters.custpage_codigo_postal_fiscal });
+                        facturaTimbrar.setValue({ fieldId: 'custbody_imr_confirm_portal_autofact', value: context.request.parameters.custpage_portal_confirmation || '' });
+
                         facturaTimbrar.save();
 
                         var DataConfigTimbre = searchData("customrecord_fe_sf_config", null, [
@@ -294,7 +154,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             var fieldFe = search.lookupFields({
                                 type: recordType,
                                 id: invoiceOrCustomerId,
-                                columns: ['custbody_fe_sf_codigo_respuesta', 'custbody_fe_sf_mensaje_respuesta', 'custbody_fe_sf_xml_sat', 'custbody_fe_sf_pdf']
+                                columns: ['custbody_fe_sf_codigo_respuesta', 'custbody_fe_sf_mensaje_respuesta', 'custbody_fe_sf_xml_sat', 'custbody_fe_sf_pdf', 'tranid', 'internalid']
                             });
 
                             var xmlFileId = fieldFe.custbody_fe_sf_xml_sat ? fieldFe.custbody_fe_sf_xml_sat[0].value : null;
@@ -322,14 +182,11 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                 email.send({
                                     author: SENDER_ID,
                                     recipients: customerEmail,
-                                    // subject: emailSubject || `Su Factura Electrónica ${invoiceInternalId}`,
-                                    // body: emailBody || `Estimado cliente, adjuntamos los archivos de su factura.`,
+                                    subject: 'Su Factura Electrónica ' + fieldFe.tranid,
+                                    body: 'Estimado cliente, adjuntamos los archivos de su factura.',
                                     subject: 'Su Factura Electrónica de Grupo Premier',
                                     body: 'Estimado cliente,\n\nAdjuntamos los archivos XML y PDF de su Comprobante Fiscal Digital por Internet (CFDI).\n\nGracias por su preferencia.',
-                                    attachments: [xmlFile, pdfFile],
-                                    relatedRecords: { // Asocia el correo a la transacción en Netsuite
-                                        transactionId: parseInt(invoiceInternalId)
-                                    }
+                                    attachments: [xmlFile, pdfFile]
                                 });
                             }
 
@@ -359,6 +216,162 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
             });
             context.response.write(JSON.stringify(responseData));
         }
+
+        function getSearchFromId(searchId, invoiceOrCustomerId) {
+            var invoiceSearch = search.load({ id: searchId });
+            invoiceSearch.filters = invoiceSearch.filters || [];
+            invoiceSearch.columns = invoiceSearch.columns || [];
+            // Aquí podrías añadir filtros adicionales si es necesario
+            invoiceSearch.filters = invoiceSearch.filters.concat([
+                search.createFilter({
+                    name: 'custbody_pos3_receiptnumber', // O 'invoicenumber' si ese es el campo que usas
+                    operator: search.Operator.IS,
+                    values: invoiceOrCustomerId
+                })
+            ]);
+
+            return invoiceSearch;
+        }
+
+
+        function getSearchFromParams(invoiceOrCustomerId) {
+            var filters = [];
+            var invoiceSearch = null;
+            filters.push(search.createFilter({
+                name: 'tranid', // O 'invoicenumber' si ese es el campo que usas
+                operator: search.Operator.IS,
+                values: invoiceOrCustomerId
+            }));
+            // Asumimos que el código postal está en la dirección de facturación del cliente en la factura
+            // Esto puede variar. Podría ser 'billzip', 'shipzip', o un campo personalizado.
+            // También podrías necesitar buscar en el registro del cliente asociado.
+
+            filters.push(search.createFilter({ // Asegurar que sea una factura de venta
+                name: 'type',
+                operator: search.Operator.ANYOF,
+                values: ['CustInvc']
+            }));
+            filters.push(search.createFilter({ // Considerar solo la línea principal
+                name: 'mainline',
+                operator: search.Operator.IS,
+                values: 'T' // O 'F' si necesitas detalles de líneas específicas
+            }));
+
+            invoiceSearch = search.create({
+                type: search.Type.INVOICE, // O 'transaction' si es más general
+                filters: filters,
+                columns: [
+                    search.createColumn({ name: 'tranid' }), // Número de Factura
+                    search.createColumn({ name: 'entity', label: 'CustomerInternalId' }), // ID Interno del Cliente
+                    search.createColumn({ name: 'companyname', join: 'customer', label: 'CustomerName' }), // Nombre del Cliente
+                    search.createColumn({ name: 'trandate' }), // Fecha de Emisión
+                    search.createColumn({ name: 'duedate' }), // Fecha de Vencimiento
+                    search.createColumn({ name: 'total' }), // Monto Total
+                    search.createColumn({ name: 'custbody_fe_razon_social' }), // Monto Total
+                    search.createColumn({ name: 'custbody_ce_rfc' }), // RFC cliente
+                    search.createColumn({ name: 'custbodyimr_regimenfiscalreceptor' }), // Monto Total
+                    search.createColumn({ name: 'custbody_uso_cfdi_fe_imr_33' }), // Monto Total
+                    search.createColumn({ name: 'custbody_forma_pago_fe_imr_33' }), // Monto Total
+                    search.createColumn({ name: 'custbody_fe_metodo_de_pago' }), // Monto Total
+                    search.createColumn({ name: 'billaddress' }), // Monto Total
+                    search.createColumn({ name: 'custbody_domiciliofiscalreceptor' }), // Monto Total
+                    search.createColumn({ name: 'subsidiary' }), // Monto Total
+                    search.createColumn({ name: 'custbody_fe_sf_codigo_respuesta' }), //Codigo de respuesta del timbrado
+                    search.createColumn({ name: 'custbody_fe_sf_xml_sat' }), //Codigo de respuesta del timbrado
+                    search.createColumn({ name: 'custbody_fe_sf_pdf' }), //Codigo de respuesta del timbrado
+                    // Podrías necesitar más columnas para los conceptos, lo que haría la búsqueda más compleja
+                    // o requeriría cargar el registro de la factura después.
+                ]
+            });
+
+            return invoiceSearch;
+        }
+
+
+        function getSearchResults(invoiceSearch) {
+            var responseData = {
+                success: false,
+                message: '',
+                invoiceData: null
+            };
+            var searchResult = invoiceSearch.run().getRange({ start: 0, end: 1 }); // Tomar solo el primer resultado
+
+            if (searchResult && searchResult.length > 0) {
+                var result = searchResult[0];
+                var invoiceRecordId = result.id; // ID interno de la factura encontrada
+                var codResp = result.getValue({ name: 'custbody_fe_sf_codigo_respuesta' }) || '';
+                if (codResp == '200.0' || codResp == '200') {
+                    var xmlSat = result.getValue({ name: 'custbody_fe_sf_xml_sat' }) || '';
+                    var pdf = result.getValue({ name: 'custbody_fe_sf_pdf' }) || '';
+                    var xmlFile = file.load({
+                        id: xmlSat  // Cargar el archivo XML del SAT
+                    });
+                    var pdfFile = file.load({
+                        id: pdf  // Cargar el archivo PDF   
+                    });
+                    var configRecObj = config.load({
+                        type: config.Type.COMPANY_INFORMATION
+                    });
+                    var accountId = '5652668-sb1' || configRecObj.getValue('companyid');
+
+                    var domain = 'https://' + accountId + '.app.netsuite.com'
+
+                    responseData.message = 'La factura ya ha sido timbrada.';
+                    responseData.invoiceData = {
+                        isStamped: true,
+                        xmlUrl: domain + xmlFile.url, // URL del XML
+                        pdfUrl: domain + pdfFile.url, // URL del PDF
+                    }
+                    context.response.write(JSON.stringify(responseData));
+                    return;
+                }
+
+                // Para obtener los conceptos (line items), usualmente necesitas cargar el registro
+                var lineItems = [];
+                var invoiceRecord = record.load({
+                    type: record.Type.INVOICE,
+                    id: invoiceRecordId,
+                    isDynamic: false
+                });
+
+                var numLines = invoiceRecord.getLineCount({ sublistId: 'item' });
+                for (var i = 0; i < numLines; i++) {
+                    lineItems.push({
+                        description: invoiceRecord.getSublistText({ sublistId: 'item', fieldId: 'item', line: i }) + " (" + invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'description', line: i }) + ")",
+                        quantity: invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'quantity', line: i }),
+                        unitPrice: invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'rate', line: i }),
+                        total: invoiceRecord.getSublistValue({ sublistId: 'item', fieldId: 'amount', line: i })
+                    });
+                }
+
+                responseData.success = true;
+                responseData.message = 'Factura encontrada.';
+                responseData.invoiceData = {
+                    invoiceNumber: result.getValue('tranid'),
+                    internalId: result.id,
+                    // customerId: result.getValue('entity'), // Este es el ID interno
+                    customerName: result.getText('entity') || result.getValue({ name: 'companyname', join: 'customer' }), // Nombre del cliente
+                    subsidiaryId: result.getValue('subsidiary'),
+                    issueDate: result.getValue('trandate'),
+                    dueDate: result.getValue('duedate'),
+                    totalAmount: parseFloat(result.getValue('total')).toFixed(2), // Formatear a 2 decimales
+                    razonSocial: result.getValue('custbody_fe_razon_social'),
+                    rfc: result.getValue('custbody_ce_rfc'),
+                    regimenFiscal: result.getText('custbodyimr_regimenfiscalreceptor'),
+                    usoCfdi: result.getText('custbody_uso_cfdi_fe_imr_33'),
+                    formaPago: result.getText('custbody_forma_pago_fe_imr_33'),
+                    metodoPago: result.getText('custbody_fe_metodo_de_pago'),
+                    domicilioFiscal: invoiceRecord.getText('billaddress'),
+                    codigoPostalFiscal: invoiceRecord.getText('custbody_domiciliofiscalreceptor'),
+                    lineItems: lineItems,
+                };
+            } else {
+                responseData.message = 'Factura no encontrada o los datos no coinciden.';
+                log.audit('Búsqueda sin resultados', 'Criterios: ' + JSON.stringify(filters));
+            }
+            return responseData;
+        }
+
 
 
         function searchData(type, columns, filters, idSearch) {

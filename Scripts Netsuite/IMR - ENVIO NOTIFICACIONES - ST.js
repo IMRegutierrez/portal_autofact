@@ -28,15 +28,15 @@ define(['N/email', 'N/log', 'N/runtime'],
             }
 
             let responseData = { success: false, message: '' };
-            const SUPPORT_EMAIL = 'egutierrez@imr.com.mx'; // <-- CAMBIA ESTO por tu correo de soporte
-            const SENDER_ID = -5; // ID del autor del correo (ej. -5 para el usuario actual)
+            const SUPPORT_EMAIL = ['egutierrez@imr.com.mx','sea@gpopremier.com']; // <-- CAMBIA ESTO por tu correo de soporte
+            const SENDER_ID = 6225; // ID del autor del correo (ej. -5 para el usuario actual)
 
 
             try {
                 if (scriptContext.request.method === 'POST') {
                     const requestBody = JSON.parse(scriptContext.request.body);
                     const { invoiceData, fiscalData, errorMessage, clientEmail } = requestBody;
-
+                   
                     if (!invoiceData || !fiscalData || !errorMessage) {
                         throw new Error("Faltan datos en la solicitud de reporte.");
                     }
@@ -54,7 +54,7 @@ define(['N/email', 'N/log', 'N/runtime'],
                         <li><strong>Número de Factura:</strong> ${invoiceData.invoiceNumber || 'N/A'}</li>
                         <li><strong>ID Interno:</strong> ${invoiceData.internalId || 'N/A'}</li>
                         <li><strong>Cliente:</strong> ${invoiceData.customerName || 'N/A'}</li>
-                        <li><strong>Monto:</strong> ${invoiceData.totalAmount || 'N/A'}</li>
+                        <li><strong>Monto:</strong> $${invoiceData.totalAmount || 'N/A'}</li>
                     </ul>
                     <hr>
                     <h3>Datos Fiscales Ingresados por el Usuario</h3>
@@ -62,8 +62,10 @@ define(['N/email', 'N/log', 'N/runtime'],
                         <li><strong>Razón Social:</strong> ${fiscalData.razonSocial || 'N/A'}</li>
                         <li><strong>RFC:</strong> ${fiscalData.rfc || 'N/A'}</li>
                         <li><strong>Email del Cliente:</strong> ${clientEmail || 'No proporcionado'}</li>
+                        <li><strong>Teléfono del Cliente:</strong> ${fiscalData.telefono || 'No proporcionado'}</li>
                         <li><strong>Uso CFDI:</strong> ${fiscalData.usoCfdi || 'N/A'}</li>
                         <li><strong>Régimen Fiscal:</strong> ${fiscalData.regimenFiscal || 'N/A'}</li>
+                        <li><strong>Código postal:</strong> ${fiscalData.codigoPostalFiscal || 'N/A'}</li>
                     </ul>
                 `;
 
