@@ -37,7 +37,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme }: Invoic
         <form onSubmit={handleSubmit} className="space-y-6 mb-8">
             <div>
                 <label htmlFor="invoiceOrCustomerId" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
-                    Número de Factura o ID de Cliente
+                    Folio a facturar:
                 </label>
                 <input 
                     type="text" 
@@ -62,7 +62,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme }: Invoic
                     {!isLoading && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>}
                     {isLoading && <path d="M12 2v2m0 16v2m8.07-2.07l-1.41-1.41M5.34 18.66l-1.41-1.41m14.14 0l-1.41 1.41M3.93 5.34l1.41 1.41m0 9.9M18.66 5.34l1.41-1.41"></path>}
                 </svg>
-                <span>{isLoading ? 'Buscando...' : 'Buscar Factura'}</span>
+                <span>{isLoading ? 'Buscando...' : 'Buscar folio'}</span>
             </button>
         </form>
     );
