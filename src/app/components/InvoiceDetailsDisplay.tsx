@@ -47,7 +47,7 @@ export default function InvoiceDetailsDisplay({ invoiceData, onConfirmDetails, t
                 <p><strong>Cliente:</strong> <span>{invoiceData.customerName}</span></p>
                 <p><strong>Fecha de emisión:</strong> <span>{invoiceData.issueDate}</span></p>
                 <p><strong>Fecha de vencimiento:</strong> <span>{invoiceData.dueDate}</span></p>
-                <p className="text-xl"><strong>Monto total:</strong> <span className="font-bold text-sky-800">${invoiceData.totalAmount}</span></p>
+                <p className="text-xl"><strong>Monto total:</strong> <span className="font-bold text-sky-800">{invoiceData.totalAmount}</span></p>
             </div>
             {invoiceData.lineItems && invoiceData.lineItems.length > 0 && (
                 <div className="mt-6 border-t border-gray-400 pt-4">
@@ -69,7 +69,7 @@ export default function InvoiceDetailsDisplay({ invoiceData, onConfirmDetails, t
                     style={{ backgroundColor: theme.button, color: theme.buttonText }}
                     className="mt-8 w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
                 >
-                    Confirmar Detalles de Factura
+                    Confirmar detalles del folio
                 </button>
             )}
         </div>
