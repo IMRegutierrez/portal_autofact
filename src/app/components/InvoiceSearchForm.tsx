@@ -5,26 +5,46 @@ interface Theme {
     textSecondary: string;
     button: string;
     buttonText: string;
-    textPrimary: string; // Añadido para los estilos del input
+    textPrimary: string;
+}
+
+// Nueva interfaz para la configuración de búsqueda
+interface SearchConfig {
+    showTotalAmount?: boolean;
+    primaryFieldLabel?: string; // Ej: "Número de Factura" o "Folio de Ticket"
 }
 
 // Se define la interfaz para las props del componente, ahora solo con invoiceOrCustomerId
 interface InvoiceSearchFormProps {
-    onSearch: (searchParams: { invoiceOrCustomerId: string; }) => void;
+    onSearch: (searchParams: { invoiceOrCustomerId: string; invoiceTotal?: string }) => void;
     isLoading: boolean;
     theme: Theme;
+    searchConfig?: SearchConfig; // Recibimos la configuración aquí
 }
 
-export default function InvoiceSearchForm({ onSearch, isLoading, theme }: InvoiceSearchFormProps) {
+export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchConfig }: InvoiceSearchFormProps) {
     const [invoiceOrCustomerId, setInvoiceOrCustomerId] = useState('');
+    const [invoiceTotal, setInvoiceTotal] = useState('');
+
+    // Valores por defecto si no hay configuración específica
+    const showTotal = searchConfig?.showTotalAmount ?? false; // Por defecto no mostramos total (como lo tienes ahora)
+    const primaryLabel = searchConfig?.primaryFieldLabel || "Número de Factura o ID de Cliente";
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
         if (!invoiceOrCustomerId) {
-            alert("Por favor, ingresa el número de folio.");
+            alert(`Por favor, ingresa el ${primaryLabel}.`);
             return;
         }
-        onSearch({ invoiceOrCustomerId });
+
+        // Validación condicional del total
+        if (showTotal && !invoiceTotal) {
+             alert("Por favor, ingresa el total de la factura.");
+             return;
+        }
+
+        onSearch({ invoiceOrCustomerId, invoiceTotal });
     };
 
     const inputStyle = {
@@ -37,7 +57,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme }: Invoic
         <form onSubmit={handleSubmit} className="space-y-6 mb-8">
             <div>
                 <label htmlFor="invoiceOrCustomerId" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
-                    Folio a facturar:
+                    {primaryLabel}
                 </label>
                 <input 
                     type="text" 
@@ -47,11 +67,31 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme }: Invoic
                     required
                     style={inputStyle}
                     className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
-                    placeholder="Ej: INV-00123"
+                    placeholder={`Ej: ${primaryLabel.includes('Ticket') ? 'T-12345' : 'INV-00123'}`}
                     disabled={isLoading}
                 />
             </div>
-            {/* El campo "Total de la Factura" ha sido eliminado */}
+
+            {/* Renderizado Condicional: Solo mostramos este campo si la configuración lo dice */}
+            {showTotal && (
+                <div>
+                    <label htmlFor="invoiceTotal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
+                        Total de la Factura
+                    </label>
+                    <input 
+                        type="text" 
+                        id="invoiceTotal" 
+                        value={invoiceTotal}
+                        onChange={(e) => setInvoiceTotal(e.target.value)}
+                        required={showTotal}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
+                        placeholder="Ej: 1250.75"
+                        disabled={isLoading}
+                    />
+                </div>
+            )}
+
             <button 
                 type="submit"
                 disabled={isLoading}
