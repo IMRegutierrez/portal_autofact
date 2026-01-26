@@ -4,10 +4,12 @@ import PortalClientComponent from './PortalClientComponent';
 
 // Interfaz para definir la estructura de la configuración del cliente
 interface ClientConfig {
-  clientId: string;
-  suiteletUrl: string;
-  netsuiteCompId: string;
-  clientName: string;
+    clientId: string;
+    suiteletUrl: string;
+    netsuiteCompId: string;
+    clientName: string;
+    isActive?: boolean; // --- CAMBIO AQUÍ: Nuevo campo ---
+
 }
 
 // Interfaz para la configuración de AWS
@@ -42,6 +44,27 @@ export default async function Page(props: any) {
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
             }
+            // --- CAMBIO AQUÍ: Validación de portal activo ---
+            // Si isActive es false explícitamente, bloqueamos el acceso.
+            // Si el campo no existe, asumimos que está activo (true) por defecto, 
+            // pero puedes cambiar la lógica a (clientConfig.isActive !== true) si quieres que sea obligatorio.
+            else if (clientConfig.isActive === false) {
+                return (
+                    <main className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+                        <div className="text-center bg-white p-10 rounded-xl shadow-lg max-w-md w-full">
+                            <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <h1 className="text-2xl font-bold text-gray-800 mb-2">Portal No Disponible</h1>
+                            <p className="text-gray-600">
+                                El portal de facturación para <strong>{clientConfig.clientName}</strong> se encuentra temporalmente inhabilitado o en mantenimiento.
+                            </p>
+                            <p className="text-gray-500 text-sm mt-4">Por favor, contacte al administrador.</p>
+                        </div>
+                    </main>
+                );
+            }
+
         } catch (e: any) {
             error = e.message || "Error al conectar con el servicio de configuración.";
         }
