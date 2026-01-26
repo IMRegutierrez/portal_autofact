@@ -45,9 +45,9 @@ export default function InvoiceDetailsDisplay({ invoiceData, onConfirmDetails, t
             <div className="space-y-3" style={{ color: theme.textSecondary }}>
                 <p><strong>Número de folio:</strong> <span>{invoiceData.invoiceNumber}</span></p>
                 <p><strong>Cliente:</strong> <span>{invoiceData.customerName}</span></p>
-                <p><strong>Fecha de Emisión:</strong> <span>{invoiceData.issueDate}</span></p>
-                <p><strong>Fecha de Vencimiento:</strong> <span>{invoiceData.dueDate}</span></p>
-                <p className="text-xl"><strong>Monto Total:</strong> <span className="font-bold text-sky-800">${invoiceData.totalAmount}</span></p>
+                <p><strong>Fecha de emisión:</strong> <span>{invoiceData.issueDate}</span></p>
+                <p><strong>Fecha de vencimiento:</strong> <span>{invoiceData.dueDate}</span></p>
+                <p className="text-xl"><strong>Monto total:</strong> <span className="font-bold text-sky-800">${invoiceData.totalAmount}</span></p>
             </div>
             {invoiceData.lineItems && invoiceData.lineItems.length > 0 && (
                 <div className="mt-6 border-t border-gray-400 pt-4">

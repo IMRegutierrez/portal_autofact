@@ -98,6 +98,17 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setShowModal(true);
     };
 
+    // Función auxiliar para formatear moneda
+    const formatCurrency = (amount: string | number) => {
+        const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+        if (isNaN(value)) return amount;
+        return new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN',
+            minimumFractionDigits: 2
+        }).format(value);
+    };
+
     const handleSearchSubmit = async (searchParams: { invoiceOrCustomerId: string; }) => {
         setIsLoading(true);
         setCurrentInvoiceData(null);
@@ -125,7 +136,12 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 displayModal(data.message || 'Este folio ya ha sido timbrada anteriormente.');
                 setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
             } else if (data && data.success && data.invoiceData) {
-                setCurrentInvoiceData(data.invoiceData);
+                // Formateamos el monto total antes de guardarlo en el estado
+                const formattedData = {
+                    ...data.invoiceData,
+                    totalAmount: formatCurrency(data.invoiceData.totalAmount)
+                };
+                setCurrentInvoiceData(formattedData);
                 setShowInvoiceDetails(true);
             } else {
                 displayModal(data.message || 'Folio no encontrado o datos incorrectos.');
