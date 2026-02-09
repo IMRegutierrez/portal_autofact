@@ -25,6 +25,8 @@ interface ClientConfig {
     reportSuiteletUrl?: string;
     isActive?: boolean;
     whatsappNumber?: string; // --- CAMBIO: Nuevo campo para el número de WhatsApp ---
+    senderId?: string;      // ID interno del empleado (SENDER_ID)
+    supportEmail?: string;  // Correo de soporte (SUPPORT_EMAIL)
     searchFieldsConfig?: {
         showTotalAmount?: boolean; // ¿Mostrar campo de total?
         customFieldLabel?: string; // Etiqueta personalizada para el primer campo (ej. "Número de Ticket" en vez de "Factura")
@@ -241,7 +243,13 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             invoiceData: currentInvoiceData,
             fiscalData: collectedFiscalData,
             errorMessage: modalMessage,
-            clientEmail: collectedFiscalData.emailCfdi
+            clientEmail: collectedFiscalData.emailCfdi,
+            // --- CAMBIO AQUÍ: Inyección de datos de configuración interna ---
+            // Estos valores se usarán en el Suitelet para definir el remitente y destinatarios
+            systemContext: {
+                senderEmployeeId: config.senderId,      // SENDER_ID
+                supportEmailTarget: config.supportEmail // SUPPORT_EMAIL
+            }
         };
 
         try {
