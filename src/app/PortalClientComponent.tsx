@@ -140,7 +140,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             const data = await response.json();
 
             if (data && data.invoiceData && data.invoiceData.isStamped) {
-                displayModal(data.message || 'Este folio ya ha sido timbrada anteriormente.');
+                displayModal(data.message || 'Este folio ya ha sido timbrado anteriormente.');
                 setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
             } else if (data && data.success && data.invoiceData) {
                 // Formateamos el monto total antes de guardarlo en el estado
