@@ -3,16 +3,28 @@ import { getClients } from '@/lib/admin-actions';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
-    let clients = [];
+    let clients: any[] = [];
+    let error = null;
+
     try {
         clients = await getClients();
-    } catch (e) {
-        // Redirigir a login si falla (probablemente auth)
-        // En una app real, manejar mejor el error o el middleware lo haría
+    } catch (e: any) {
+        console.error("Dashboard Error:", e);
+        error = e.message || "Error desconocido";
+    }
+
+    if (error) {
         return (
-            <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-red-600">Error de Autenticación</h1>
-                <Link href="/admin/login" className="text-blue-500 hover:underline">Ir a Login</Link>
+            <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-8 text-center">
+                <h1 className="text-2xl font-bold text-red-600 mb-4">Error al cargar el panel</h1>
+                <p className="text-gray-700 mb-6 bg-white p-4 rounded shadow border border-red-200">
+                    {error}
+                </p>
+                <div className="space-x-4">
+                    <Link href="/admin/login" className="text-indigo-600 hover:text-indigo-800 font-medium underline">
+                        Volver a Iniciar Sesión
+                    </Link>
+                </div>
             </div>
         );
     }
