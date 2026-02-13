@@ -1,11 +1,14 @@
 'use client';
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InvoiceSearchForm from './components/InvoiceSearchForm';
 import InvoiceDetailsDisplay from './components/InvoiceDetailsDisplay';
 import FiscalDataForm from './components/FiscalDataForm';
 import Modal from './components/Modal';
 import Loader from './components/Loader';
+import { useInvoice } from '../hooks/useInvoice';
+import { useFiscalForm } from '../hooks/useFiscalForm';
+import { InvoiceSearchInputs, FiscalDataInputs } from '../lib/schemas';
 
 // --- Definición de Tipos (Interfaces) ---
 interface ClientConfig {
@@ -14,7 +17,7 @@ interface ClientConfig {
     netsuiteCompId: string;
     clientName: string;
     logoUrl?: string;
-    logoHeight?: string; // Se añade el campo opcional para la altura del logo
+    logoHeight?: string;
     backgroundColor?: string;
     cardBackgroundColor?: string;
     primaryTextColor?: string;
@@ -24,70 +27,91 @@ interface ClientConfig {
     searchId?: string;
     reportSuiteletUrl?: string;
     isActive?: boolean;
-    whatsappNumber?: string; // --- CAMBIO: Nuevo campo para el número de WhatsApp ---
-    senderId?: string;      // ID interno del empleado (SENDER_ID)
-    supportEmail?: string;  // Correo de soporte (SUPPORT_EMAIL)
+    whatsappNumber?: string;
+    senderId?: string;
+    supportEmail?: string;
     searchFieldsConfig?: {
-        showTotalAmount?: boolean; // ¿Mostrar campo de total?
-        customFieldLabel?: string; // Etiqueta personalizada para el primer campo (ej. "Número de Ticket" en vez de "Factura")
-        // Puedes agregar más opciones aquí (ej. showDate, showRFC, etc.)
+        showTotalAmount?: boolean;
+        customFieldLabel?: string;
     };
-}
-interface LineItem {
-    description: string;
-    quantity: number;
-    unitPrice: string;
-    total: string;
-}
-interface InvoiceData {
-    internalId: string;
-    invoiceNumber: string;
-    customerId: string;
-    recordType: string;
-    subsidiaryId?: string;
-    customerName: string;
-    issueDate: string;
-    dueDate: string;
-    totalAmount: string;
-    lineItems: LineItem[];
-    isStamped?: boolean;
-    xmlUrl?: string;
-    pdfUrl?: string;
-    razonSocial?: string;
-    rfc?: string;
-    emailCfdi?: string;
-    domicilioFiscal?: string;
-    codigoPostalFiscal?: string;
-    regimenFiscal?: string;
-    usoCfdi?: string;
-}
-interface FiscalData {
-    razonSocial: string;
-    rfc: string;
-    emailCfdi: string;
-    telefono?: string;
-    domicilioFiscal: string;
-    codigoPostalFiscal: string;
-    regimenFiscal: string;
-    usoCfdi: string;
-    confirmedFromPortal?: boolean;
 }
 
 // --- Componente Principal del Cliente ---
 export default function PortalClientComponent({ config }: { config: ClientConfig }) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [isReporting, setIsReporting] = useState(false);
-    const [currentInvoiceData, setCurrentInvoiceData] = useState<InvoiceData | null>(null);
+    // Hooks personalizados
+    const {
+        invoiceData,
+        isLoading: isSearching,
+        error: searchError,
+        cfdiLinks: searchCfdiLinks,
+        searchInvoice,
+        resetInvoice,
+        setError: setSearchError
+    } = useInvoice({
+        suiteletUrl: config.suiteletUrl,
+        clientId: config.clientId,
+        searchId: config.searchId
+    });
+
+    const {
+        stampInvoice,
+        isStamping,
+        stampError,
+        stampSuccess,
+        stampedFiles,
+        setStampError
+    } = useFiscalForm({
+        suiteletUrl: config.suiteletUrl
+    });
+
+    // Estado local para UI
     const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
     const [showFiscalForm, setShowFiscalForm] = useState(false);
+
+    // Estado para el modal
     const [modalMessage, setModalMessage] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [showReportButton, setShowReportButton] = useState(false);
-    const [cfdiLinks, setCfdiLinks] = useState({ xmlUrl: null, pdfUrl: null });
-    const [mockSavedFiscalData, setMockSavedFiscalData] = useState<{ [key: string]: any }>({});
-    const [collectedFiscalData, setCollectedFiscalData] = useState<FiscalData | null>(null);
+    const [isReporting, setIsReporting] = useState(false);
 
-    // Se define el tamaño del logo dinámicamente, con un valor por defecto.
+    // Estado para datos fiscales recolectados (para reporte)
+    const [collectedFiscalData, setCollectedFiscalData] = useState<FiscalDataInputs | null>(null);
+
+    // Efectos para manejar estados derivados de los hooks
+    useEffect(() => {
+        if (searchError) {
+            displayModal(searchError);
+        }
+    }, [searchError]);
+
+    useEffect(() => {
+        if (stampError) {
+            displayModal(stampError, true); // Permitir reporte si falla timbrado
+        }
+    }, [stampError]);
+
+    useEffect(() => {
+        if (stampSuccess) {
+            displayModal(stampSuccess);
+            setShowFiscalForm(false);
+            setShowInvoiceDetails(false);
+        }
+    }, [stampSuccess]);
+
+    useEffect(() => {
+        if (invoiceData) {
+            if (invoiceData.isStamped) {
+                // Si la factura ya está timbrada (detectado por useInvoice al buscar)
+                displayModal('Este folio ya ha sido timbrado anteriormente.');
+            } else {
+                setShowInvoiceDetails(true);
+            }
+        }
+    }, [invoiceData]);
+
+    // Combinar links de CFDI (de búsqueda o de timbrado reciente)
+    const activeCfdiLinks = stampedFiles.xmlUrl ? stampedFiles : searchCfdiLinks;
+
     const logoSizeClass = config.logoHeight || 'h-64';
 
     const theme = {
@@ -105,155 +129,48 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setShowModal(true);
     };
 
-    // Función auxiliar para formatear moneda
-    const formatCurrency = (amount: string | number) => {
-        const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-        if (isNaN(value)) return amount;
-        return new Intl.NumberFormat('es-MX', {
-            style: 'currency',
-            currency: 'MXN',
-            minimumFractionDigits: 2
-        }).format(value);
-    };
-
-    const handleSearchSubmit = async (searchParams: { invoiceOrCustomerId: string; }) => {
-        setIsLoading(true);
-        setCurrentInvoiceData(null);
+    const handleSearchSubmit = (data: InvoiceSearchInputs) => {
         setShowInvoiceDetails(false);
         setShowFiscalForm(false);
-        setCfdiLinks({ xmlUrl: null, pdfUrl: null });
-
-        const formData = new FormData();
-        formData.append('custpage_invoice_id', searchParams.invoiceOrCustomerId);
-        formData.append('custpage_action', 'search');
-        if (config.searchId) {
-            formData.append('custpage_search_id', config.searchId);
-        }
-        formData.append('custpage_client_id', config.clientId);
-
-        try {
-            const response = await fetch(config.suiteletUrl, {
-                method: 'POST',
-                body: formData,
-            });
-            if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
-            const data = await response.json();
-
-            if (data && data.invoiceData && data.invoiceData.isStamped) {
-                displayModal(data.message || 'Este folio ya ha sido timbrado anteriormente.');
-                setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
-            } else if (data && data.success && data.invoiceData) {
-                // Formateamos el monto total antes de guardarlo en el estado
-                const formattedData = {
-                    ...data.invoiceData,
-                    totalAmount: formatCurrency(data.invoiceData.totalAmount)
-                };
-                setCurrentInvoiceData(formattedData);
-                setShowInvoiceDetails(true);
-            } else {
-                displayModal(data.message || 'Folio no encontrado o datos incorrectos.');
-            }
-        } catch (error: any) {
-            displayModal(`Error al buscar folio: ${error.message}`);
-        } finally {
-            setIsLoading(false);
-        }
+        resetInvoice(); // Limpiar estado anterior
+        searchInvoice(data);
     };
 
     const handleConfirmInvoiceDetails = () => {
-        if (!currentInvoiceData) return;
         setShowFiscalForm(true);
         displayModal("Detalles confirmados. Procede con los datos fiscales.");
     };
 
-    const handleFiscalDataSubmit = async (fiscalDataFromForm: FiscalData) => {
-        if (!currentInvoiceData || !currentInvoiceData.internalId) {
-            displayModal("Error: No hay una folio activa para procesar.");
-            return;
-        }
-        setIsLoading(true);
-        setCfdiLinks({ xmlUrl: null, pdfUrl: null });
-        setCollectedFiscalData(fiscalDataFromForm);
-
-        const formData = new FormData();
-        formData.append('custpage_action', 'timbrar');
-        formData.append('custpage_invoice_id', currentInvoiceData.internalId);
-        formData.append('custpage_customer_id', currentInvoiceData.customerId);
-        formData.append('recordType', currentInvoiceData.recordType || 'invoice');
-        if (currentInvoiceData.subsidiaryId) {
-            formData.append('custpage_subsidiary_id', currentInvoiceData.subsidiaryId);
-        }
-        formData.append('custpage_razon_social', fiscalDataFromForm.razonSocial);
-        formData.append('custpage_rfc', fiscalDataFromForm.rfc);
-        formData.append('custpage_email_cfdi', fiscalDataFromForm.emailCfdi);
-        // Se usa || '' para asegurar que se envíe un string vacío si el campo es opcional y no se llenó.
-        formData.append('custpage_telefono', fiscalDataFromForm.telefono || '');
-        formData.append('custpage_domicilio_fiscal', fiscalDataFromForm.domicilioFiscal);
-        formData.append('custpage_codigo_postal_fiscal', fiscalDataFromForm.codigoPostalFiscal);
-        formData.append('custpage_regimen_fiscal', fiscalDataFromForm.regimenFiscal);
-        formData.append('custpage_uso_cfdi', fiscalDataFromForm.usoCfdi);
-
-        // --- CAMBIO AQUÍ: Se añade el nuevo campo si la confirmación vino del portal ---
-        if (fiscalDataFromForm.confirmedFromPortal) {
-            // En Netsuite, los checkboxes suelen usar 'T' para verdadero (true) y 'F' para falso (false).
-            formData.append('custpage_portal_confirmation', 'T'); // Reemplaza 'custpage_portal_confirmation' con el ID de tu campo
-        }
-
-        try {
-            const response = await fetch(config.suiteletUrl, {
-                method: 'POST',
-                body: formData
-            });
-            if (!response.ok) throw new Error(`Error del servidor de timbrado: ${response.status}`);
-            const data = await response.json();
-            if (data && data.success) {
-                displayModal(data.message || "Proceso de CFDI completado.");
-                if (data.invoiceData && (data.invoiceData.xmlUrl || data.invoiceData.pdfUrl)) {
-                    setCfdiLinks({ xmlUrl: data.invoiceData.xmlUrl, pdfUrl: data.invoiceData.pdfUrl });
-                }
-                setShowFiscalForm(false);
-                setShowInvoiceDetails(false);
-            } else {
-                displayModal(data.message || "Ocurrió un error durante el timbrado.", true);
-            }
-        } catch (error: any) {
-            displayModal(`Error al timbrar: ${error.message}`, true);
-        } finally {
-            setIsLoading(false);
-        }
+    const handleFiscalDataSubmit = async (fiscalData: FiscalDataInputs) => {
+        if (!invoiceData) return;
+        setCollectedFiscalData(fiscalData);
+        await stampInvoice(fiscalData, invoiceData);
     };
 
-    // --- NUEVA FUNCIÓN PARA MANEJAR EL REPORTE ---
     const handleReportProblem = async () => {
-        if (!currentInvoiceData || !collectedFiscalData) {
+        if (!invoiceData || !collectedFiscalData) {
             displayModal("No hay suficiente información para enviar el reporte.");
             return;
         }
-        // --- CAMBIO AQUÍ: Se verifica si la URL de reporte está configurada ---
         if (!config.reportSuiteletUrl) {
             displayModal("La función para reportar problemas no está configurada.");
             return;
         }
         setIsReporting(true);
 
-        const reportSuiteletUrl = config.reportSuiteletUrl; // Se usa la URL de la configuración
-
-        // El objeto 'collectedFiscalData' ya contiene el teléfono, por lo que se enviará automáticamente.
         const reportData = {
-            invoiceData: currentInvoiceData,
+            invoiceData: invoiceData,
             fiscalData: collectedFiscalData,
             errorMessage: modalMessage,
             clientEmail: collectedFiscalData.emailCfdi,
-            // --- CAMBIO AQUÍ: Inyección de datos de configuración interna ---
-            // Estos valores se usarán en el Suitelet para definir el remitente y destinatarios
             systemContext: {
-                senderEmployeeId: config.senderId,      // SENDER_ID
-                supportEmailTarget: config.supportEmail // SUPPORT_EMAIL
+                senderEmployeeId: config.senderId,
+                supportEmailTarget: config.supportEmail
             }
         };
 
         try {
-            const response = await fetch(reportSuiteletUrl, {
+            const response = await fetch(config.reportSuiteletUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reportData)
@@ -262,17 +179,17 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             if (!response.ok || !result.success) {
                 throw new Error(result.message || "El servidor de reportes devolvió un error.");
             }
-            // Se cierra el modal actual y se muestra uno nuevo de confirmación
             setShowModal(false);
-            setTimeout(() => displayModal(result.message), 500); // Pequeño delay para que se vea la transición
+            setTimeout(() => displayModal(result.message), 500);
         } catch (error: any) {
-            // Se cierra el modal actual y se muestra uno nuevo de error
             setShowModal(false);
             setTimeout(() => displayModal(`No se pudo enviar el reporte: ${error.message}`), 500);
         } finally {
             setIsReporting(false);
         }
     };
+
+    const isLoading = isSearching || isStamping;
 
     return (
         <div style={{ backgroundColor: theme.background, color: theme.textPrimary }} className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -285,13 +202,11 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                         <img
                             src={config.logoUrl}
                             alt={`Logo de ${config.clientName}`}
-                            // --- CAMBIO AQUÍ: Se usa la clase de tamaño dinámica ---
                             className={`${logoSizeClass} w-auto mx-auto object-contain`}
                         />
                     ) : (
                         <svg
                             style={{ color: theme.textPrimary }}
-                            // --- CAMBIO AQUÍ: Se usa la clase de tamaño dinámica ---
                             className={`${logoSizeClass} w-auto mx-auto`}
                             fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     )}
@@ -308,41 +223,40 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
 
                 {isLoading && <Loader />}
 
-                {showInvoiceDetails && currentInvoiceData && (
+                {showInvoiceDetails && invoiceData && (
                     <InvoiceDetailsDisplay
-                        invoiceData={currentInvoiceData}
+                        invoiceData={invoiceData}
                         onConfirmDetails={handleConfirmInvoiceDetails}
                         theme={theme}
                     />
                 )}
-                {showFiscalForm && currentInvoiceData && (
+
+                {showFiscalForm && invoiceData && (
                     <FiscalDataForm
-                        invoiceNumberForContext={currentInvoiceData.invoiceNumber}
-                        initialData={mockSavedFiscalData[currentInvoiceData.invoiceNumber] || currentInvoiceData}
+                        invoiceNumberForContext={invoiceData.invoiceNumber}
+                        initialData={invoiceData as Partial<FiscalDataInputs>}
                         onSubmit={handleFiscalDataSubmit}
                         isLoading={isLoading}
                         theme={theme}
                     />
                 )}
-                {(cfdiLinks.xmlUrl || cfdiLinks.pdfUrl) && !isLoading && (
+
+                {(activeCfdiLinks.xmlUrl || activeCfdiLinks.pdfUrl) && !isLoading && (
                     <div className="mt-8 p-6 bg-white/50 rounded-lg shadow-inner text-center">
                         <h3 style={{ color: theme.textPrimary }} className="text-xl font-semibold mb-4">CFDI Generado Exitosamente</h3>
                         <p style={{ color: theme.textSecondary }} className="mb-6">Descarga los archivos de tu factura.</p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            {cfdiLinks.xmlUrl && <a href={cfdiLinks.xmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 transition-colors">Descargar XML</a>}
-                            {cfdiLinks.pdfUrl && <a href={cfdiLinks.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">Descargar PDF</a>}
+                            {activeCfdiLinks.xmlUrl && <a href={activeCfdiLinks.xmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 transition-colors">Descargar XML</a>}
+                            {activeCfdiLinks.pdfUrl && <a href={activeCfdiLinks.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">Descargar PDF</a>}
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* --- BOTÓN FLOTANTE DE WHATSAPP --- */}
             {config.whatsappNumber && (
                 <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
-                    {/* Burbuja de ayuda */}
                     <div className="bg-white text-gray-800 px-4 py-2 rounded-lg shadow-lg mb-1 relative border border-gray-100 max-w-[200px] text-center text-sm font-medium animate-bounce-slow">
                         ¿Tienes alguna duda sobre tu folio/factura?
-                        {/* Triángulo inferior */}
                         <div className="absolute w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 bottom-[-6px] right-6"></div>
                     </div>
 
@@ -374,3 +288,4 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         </div>
     );
 }
+

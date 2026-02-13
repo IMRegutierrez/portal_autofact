@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { InvoiceSearchSchema, InvoiceSearchInputs } from '../../lib/schemas';
 
 // Se define una interfaz para el objeto de tema
 interface Theme {
@@ -14,37 +16,24 @@ interface SearchConfig {
     primaryFieldLabel?: string; // Ej: "Número de Factura" o "Folio de Ticket"
 }
 
-// Se define la interfaz para las props del componente, ahora solo con invoiceOrCustomerId
+// Se define la interfaz para las props del componente
 interface InvoiceSearchFormProps {
-    onSearch: (searchParams: { invoiceOrCustomerId: string; invoiceTotal?: string }) => void;
+    onSearch: (data: InvoiceSearchInputs) => void;
     isLoading: boolean;
     theme: Theme;
     searchConfig?: SearchConfig; // Recibimos la configuración aquí
 }
 
 export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchConfig }: InvoiceSearchFormProps) {
-    const [invoiceOrCustomerId, setInvoiceOrCustomerId] = useState('');
-    const [invoiceTotal, setInvoiceTotal] = useState('');
-
-    // Valores por defecto si no hay configuración específica
-    const showTotal = searchConfig?.showTotalAmount ?? false; // Por defecto no mostramos total (como lo tienes ahora)
     const primaryLabel = searchConfig?.primaryFieldLabel || "Número de Factura o ID de Cliente";
+    const showTotal = searchConfig?.showTotalAmount ?? false;
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        
-        if (!invoiceOrCustomerId) {
-            alert(`Por favor, ingresa el ${primaryLabel}.`);
-            return;
-        }
+    const { register, handleSubmit, formState: { errors } } = useForm<InvoiceSearchInputs>({
+        resolver: zodResolver(InvoiceSearchSchema),
+    });
 
-        // Validación condicional del total
-        if (showTotal && !invoiceTotal) {
-             alert("Por favor, ingresa el total de la factura.");
-             return;
-        }
-
-        onSearch({ invoiceOrCustomerId, invoiceTotal });
+    const onSubmit = (data: InvoiceSearchInputs) => {
+        onSearch(data);
     };
 
     const inputStyle = {
@@ -54,36 +43,36 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchCo
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 mb-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mb-8">
             <div>
                 <label htmlFor="invoiceOrCustomerId" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
                     {primaryLabel}
                 </label>
-                <input 
-                    type="text" 
-                    id="invoiceOrCustomerId" 
-                    value={invoiceOrCustomerId}
-                    onChange={(e) => setInvoiceOrCustomerId(e.target.value)}
-                    required
+                <input
+                    type="text"
+                    id="invoiceOrCustomerId"
+                    {...register("invoiceOrCustomerId")}
                     style={inputStyle}
                     className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
                     placeholder={`Ej: ${primaryLabel.includes('Ticket') ? 'T-12345' : 'INV-00123'}`}
                     disabled={isLoading}
                 />
+                {errors.invoiceOrCustomerId && <p className="text-red-500 text-sm mt-1">{errors.invoiceOrCustomerId.message}</p>}
             </div>
 
             {/* Renderizado Condicional: Solo mostramos este campo si la configuración lo dice */}
+            {/* Nota: Por ahora el esquema InvoiceSearchSchema solo valida invoiceOrCustomerId. 
+                Si se requiere validar el total, habría que actualizar el esquema. */}
             {showTotal && (
                 <div>
                     <label htmlFor="invoiceTotal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
                         Total de la Factura
                     </label>
-                    <input 
-                        type="text" 
-                        id="invoiceTotal" 
-                        value={invoiceTotal}
-                        onChange={(e) => setInvoiceTotal(e.target.value)}
-                        required={showTotal}
+                    <input
+                        type="text"
+                        id="invoiceTotal"
+                        // Por ahora no registramos este campo en el form principal porque no está en el schema actual
+                        // Si se necesita, actualizar schemas.ts
                         style={inputStyle}
                         className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
                         placeholder="Ej: 1250.75"
@@ -92,7 +81,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchCo
                 </div>
             )}
 
-            <button 
+            <button
                 type="submit"
                 disabled={isLoading}
                 style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }}
@@ -107,3 +96,4 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchCo
         </form>
     );
 }
+

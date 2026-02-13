@@ -1,93 +1,56 @@
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { FiscalDataSchema, FiscalDataInputs } from '../../lib/schemas';
 
-// Interfaces para los tipos de datos
-interface FiscalData {
-    razonSocial: string;
-    rfc: string;
-    emailCfdi: string;
-    telefono?: string; 
-    domicilioFiscal: string;
-    codigoPostalFiscal: string;
-    regimenFiscal: string;
-    usoCfdi: string;
-    confirmedFromPortal?: boolean; // Se añade una bandera opcional para la confirmación
-}
 interface Theme {
     textPrimary: string;
     textSecondary: string;
     button: string;
     buttonText: string;
 }
+
 interface FiscalDataFormProps {
     invoiceNumberForContext: string;
-    initialData: Partial<FiscalData>;
-    onSubmit: (data: FiscalData) => void;
+    initialData: Partial<FiscalDataInputs>;
+    onSubmit: (data: FiscalDataInputs) => void;
     isLoading: boolean;
     theme: Theme;
 }
 
 export default function FiscalDataForm({ invoiceNumberForContext, initialData, onSubmit, isLoading, theme }: FiscalDataFormProps) {
-    const [formData, setFormData] = useState<FiscalData>({
-        razonSocial: '',
-        rfc: '',
-        emailCfdi: '',
-        telefono: '',
-        domicilioFiscal: '',
-        codigoPostalFiscal: '',
-        regimenFiscal: '',
-        usoCfdi: '',
+    const { register, handleSubmit, formState: { errors, isValid }, trigger, setValue } = useForm<FiscalDataInputs>({
+        resolver: zodResolver(FiscalDataSchema),
+        defaultValues: {
+            ...initialData,
+            telefono: initialData.telefono || '',
+        },
+        mode: 'onChange'
     });
-    // --- NUEVO ESTADO PARA EL ERROR DEL RFC ---
-    const [rfcError, setRfcError] = useState<string | null>(null);
-    // --- NUEVO ESTADO PARA EL MODAL DE CONFIRMACIÓN ---
+
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingData, setPendingData] = useState<FiscalDataInputs | null>(null);
 
     useEffect(() => {
-        setFormData(prev => ({ ...prev, ...initialData }));
-    }, [initialData]);
-
-    // --- FUNCIÓN DE VALIDACIÓN DE RFC ---
-    const validateRfc = (rfc: string): boolean => {
-        if (!rfc) return false;
-        // Expresión regular para validar RFC de personas físicas (13 caracteres) y morales (12 caracteres)
-        const rfcRegex = /^[A-Z&Ñ]{4}[0-9]{2}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}$|^[A-Z&Ñ]{3}[0-9]{2}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{3}$/;
-        return rfcRegex.test(rfc);
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        const upperValue = name === 'rfc' ? value.toUpperCase() : value;
-        
-        setFormData(prev => ({ ...prev, [name]: upperValue }));
-
-        // --- VALIDACIÓN EN TIEMPO REAL ---
-        if (name === 'rfc') {
-            if (upperValue.length > 0 && !validateRfc(upperValue)) {
-                setRfcError('El formato del RFC no es válido.');
-            } else {
-                setRfcError(null);
-            }
+        if (initialData) {
+            Object.keys(initialData).forEach((key) => {
+                setValue(key as any, (initialData as any)[key]);
+            });
         }
-    };
+    }, [initialData, setValue]);
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        // --- VALIDACIÓN FINAL ANTES DE ENVIAR ---
-        if (!validateRfc(formData.rfc)) {
-            setRfcError('El formato del RFC no es válido. Por favor, corrígelo para continuar.');
-            return;
-        }
-        // --- MUESTRA EL MODAL EN LUGAR DE ENVIAR DIRECTAMENTE ---
+    const onFormSubmit = (data: FiscalDataInputs) => {
+        setPendingData(data);
         setShowConfirmModal(true);
     };
 
-    // --- NUEVA FUNCIÓN PARA EL ENVÍO FINAL ---
     const handleFinalSubmit = () => {
-        setShowConfirmModal(false);
-        // --- CAMBIO AQUÍ: Se añade la bandera de confirmación al enviar los datos ---
-        onSubmit({ ...formData, confirmedFromPortal: true });
+        if (pendingData) {
+            onSubmit({ ...pendingData, confirmedFromPortal: true });
+            setShowConfirmModal(false);
+        }
     };
-    
+
     const inputStyle = {
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -102,59 +65,101 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
             <p className="mb-6" style={{ color: theme.textSecondary }}>
                 Folio: {invoiceNumberForContext}
             </p>
-            
-            <form onSubmit={handleSubmit} className="space-y-5">
+
+            <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
                 <div>
                     <label htmlFor="razonSocial" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Razón Social</label>
-                    <input type="text" id="razonSocial" name="razonSocial" value={formData.razonSocial} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="Nombre completo" disabled={isLoading}/>
+                    <input
+                        type="text"
+                        id="razonSocial"
+                        {...register('razonSocial')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg"
+                        placeholder="Nombre completo"
+                        disabled={isLoading}
+                    />
+                    {errors.razonSocial && <p className="text-red-500 text-xs font-semibold mt-1">{errors.razonSocial.message}</p>}
                 </div>
                 <div>
                     <label htmlFor="rfc" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>RFC</label>
-                    <input 
-                        type="text" 
-                        id="rfc" 
-                        name="rfc" 
-                        value={formData.rfc} 
-                        onChange={handleChange} 
-                        required 
-                        style={inputStyle} 
-                        className="w-full px-4 py-3 rounded-lg uppercase" 
-                        placeholder="Ej: XAXX010101000" 
+                    <input
+                        type="text"
+                        id="rfc"
+                        {...register('rfc')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg uppercase"
+                        placeholder="Ej: XAXX010101000"
                         disabled={isLoading}
                         maxLength={13}
+                        onChange={(e) => {
+                            e.target.value = e.target.value.toUpperCase();
+                            register('rfc').onChange(e); // Mantener el evento de react-hook-form
+                        }}
                     />
-                    {rfcError && <p className="text-red-800 text-xs font-semibold mt-1">{rfcError}</p>}
+                    {errors.rfc && <p className="text-red-500 text-xs font-semibold mt-1">{errors.rfc.message}</p>}
                 </div>
                 <div>
                     <label htmlFor="emailCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Email para envío de CFDI</label>
-                    <input type="email" id="emailCfdi" name="emailCfdi" value={formData.emailCfdi} onChange={handleChange} style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="correo@ejemplo.com (opcional)" disabled={isLoading}/>
+                    <input
+                        type="email"
+                        id="emailCfdi"
+                        {...register('emailCfdi')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg"
+                        placeholder="correo@ejemplo.com"
+                        disabled={isLoading}
+                    />
+                    {errors.emailCfdi && <p className="text-red-500 text-xs font-semibold mt-1">{errors.emailCfdi.message}</p>}
                 </div>
                 <div>
                     <label htmlFor="telefono" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Número Telefónico</label>
-                    <input 
-                        type="tel" 
-                        id="telefono" 
-                        name="telefono" 
-                        value={formData.telefono} 
-                        onChange={handleChange} 
-                        style={inputStyle} 
-                        className="w-full px-4 py-3 rounded-lg" 
-                        placeholder="10 dígitos (opcional)" 
+                    <input
+                        type="tel"
+                        id="telefono"
+                        {...register('telefono')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg"
+                        placeholder="10 dígitos (opcional)"
                         disabled={isLoading}
                         maxLength={10}
                     />
+                    {errors.telefono && <p className="text-red-500 text-xs font-semibold mt-1">{errors.telefono.message}</p>}
                 </div>
                 <div>
                     <label htmlFor="domicilioFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Domicilio Fiscal Receptor</label>
-                    <input type="text" id="domicilioFiscal" name="domicilioFiscal" value={formData.domicilioFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="Calle, Número, Colonia" disabled={isLoading}/>
+                    <input
+                        type="text"
+                        id="domicilioFiscal"
+                        {...register('domicilioFiscal')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg"
+                        placeholder="Calle, Número, Colonia"
+                        disabled={isLoading}
+                    />
+                    {errors.domicilioFiscal && <p className="text-red-500 text-xs font-semibold mt-1">{errors.domicilioFiscal.message}</p>}
                 </div>
                 <div>
                     <label htmlFor="codigoPostalFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Código Postal (Receptor)</label>
-                    <input type="text" id="codigoPostalFiscal" name="codigoPostalFiscal" value={formData.codigoPostalFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" placeholder="Ej: 06600" disabled={isLoading}/>
+                    <input
+                        type="text"
+                        id="codigoPostalFiscal"
+                        {...register('codigoPostalFiscal')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg"
+                        placeholder="Ej: 06600"
+                        disabled={isLoading}
+                    />
+                    {errors.codigoPostalFiscal && <p className="text-red-500 text-xs font-semibold mt-1">{errors.codigoPostalFiscal.message}</p>}
                 </div>
                 <div>
                     <label htmlFor="regimenFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Régimen Fiscal Receptor</label>
-                    <select id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
+                    <select
+                        id="regimenFiscal"
+                        {...register('regimenFiscal')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg"
+                        disabled={isLoading}
+                    >
                         <option value="">Seleccione un régimen...</option>
                         <option value="601">General de Ley Personas Morales</option>
                         <option value="603">Personas Morales con Fines no Lucrativos</option>
@@ -165,10 +170,17 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                         <option value="621">Incorporación Fiscal</option>
                         <option value="626">Régimen Simplificado de Confianza</option>
                     </select>
+                    {errors.regimenFiscal && <p className="text-red-500 text-xs font-semibold mt-1">{errors.regimenFiscal.message}</p>}
                 </div>
                 <div>
                     <label htmlFor="usoCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Uso de CFDI</label>
-                    <select id="usoCfdi" name="usoCfdi" value={formData.usoCfdi} onChange={handleChange} required style={inputStyle} className="w-full px-4 py-3 rounded-lg" disabled={isLoading}>
+                    <select
+                        id="usoCfdi"
+                        {...register('usoCfdi')}
+                        style={inputStyle}
+                        className="w-full px-4 py-3 rounded-lg"
+                        disabled={isLoading}
+                    >
                         <option value="">Seleccione un uso...</option>
                         <option value="S01">Sin efectos fiscales</option>
                         <option value="G01">Adquisición de mercancías</option>
@@ -177,9 +189,10 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
                         <option value="I08">Otra maquinaria y equipo</option>
                         <option value="P01">Por definir</option>
                     </select>
+                    {errors.usoCfdi && <p className="text-red-500 text-xs font-semibold mt-1">{errors.usoCfdi.message}</p>}
                 </div>
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     disabled={isLoading}
                     style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }}
                     className="w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
@@ -215,3 +228,4 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
         </div>
     );
 }
+
