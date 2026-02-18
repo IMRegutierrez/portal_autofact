@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { login } from '@/lib/admin-actions';
 
 function SubmitButton() {
@@ -17,8 +18,7 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-    // @ts-ignore
-    const [state, formAction] = useFormState(login, null);
+    const [state, formAction] = useActionState(login, null);
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">

@@ -46,7 +46,15 @@ async function isAuthenticated() {
 
 // --- Server Actions ---
 
-export async function login(formData: FormData) {
+export async function login(prevState: any, formData: FormData) {
+    console.log("Login attempt received. PrevState:", prevState);
+    console.log("FormData type:", typeof formData);
+    console.log("FormData is null?", formData === null);
+
+    if (!formData) {
+        return { error: "Error: FormData is missing" };
+    }
+
     const password = formData.get('password') as string;
 
     if (!process.env.ADMIN_PASSWORD) {
