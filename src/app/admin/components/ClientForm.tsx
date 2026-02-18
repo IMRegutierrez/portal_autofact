@@ -49,7 +49,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <input
                             {...register("clientId", { required: "El Client ID es requerido" })}
                             readOnly={!!initialData}
-                            className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md ${initialData ? 'bg-gray-100' : ''}`}
+                            className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900 ${initialData ? 'bg-gray-100' : ''}`}
                         />
                         {errors.clientId && <p className="text-red-500 text-xs mt-1">{errors.clientId.message as string}</p>}
                     </div>
@@ -60,7 +60,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="mt-1">
                         <input
                             {...register("clientName", { required: "El nombre es requerido" })}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
                         />
                     </div>
                 </div>
@@ -70,7 +70,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="mt-1">
                         <input
                             {...register("suiteletUrl", { required: "La URL del Suitelet es requerida" })}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
                         />
                     </div>
                 </div>
@@ -80,7 +80,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="mt-1">
                         <input
                             {...register("netsuiteCompId")}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
                         />
                     </div>
                 </div>
@@ -90,7 +90,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="mt-1">
                         <input
                             {...register("whatsappNumber")}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
                         />
                     </div>
                 </div>
@@ -100,7 +100,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="mt-1">
                         <input
                             {...register("logoUrl")}
-                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
                         />
                     </div>
                 </div>

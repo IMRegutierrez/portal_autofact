@@ -62,7 +62,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             if (searchId) {
                                 invoiceSearch = search.load({ id: searchId });
                                 invoiceSearch.filters.push(search.createFilter({
-                                    name: 'custbody_pos3_receiptnumber',
+                                    name: 'tranid',
                                     operator: search.Operator.IS,
                                     values: invoiceOrCustomerId
                                 }));
