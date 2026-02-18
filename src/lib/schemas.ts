@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const InvoiceSearchSchema = z.object({
   invoiceOrCustomerId: z.string().min(1, "El folio o ID de cliente es requerido"),
+  invoiceTotal: z.string().optional(),
 });
 
 export const FiscalDataSchema = z.object({

@@ -58,6 +58,9 @@ export function useInvoice({ suiteletUrl, clientId, searchId }: UseInvoiceProps)
         if (searchId) {
             formData.append('custpage_search_id', searchId);
         }
+        if (data.invoiceTotal) {
+            formData.append('custpage_invoice_total', data.invoiceTotal);
+        }
         formData.append('custpage_client_id', clientId);
 
         try {

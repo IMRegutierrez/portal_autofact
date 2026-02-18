@@ -71,8 +71,7 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchCo
                     <input
                         type="text"
                         id="invoiceTotal"
-                        // Por ahora no registramos este campo en el form principal porque no está en el schema actual
-                        // Si se necesita, actualizar schemas.ts
+                        {...register("invoiceTotal")}
                         style={inputStyle}
                         className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
                         placeholder="Ej: 1250.75"
