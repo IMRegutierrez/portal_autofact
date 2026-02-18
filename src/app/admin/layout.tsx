@@ -1,5 +1,5 @@
 import { isAuthenticated } from '@/lib/admin-actions';
-import AdminSession from './components/AdminSession';
+import AdminLayoutWrapper from './components/AdminLayoutWrapper';
 
 export default async function AdminLayout({
     children,
@@ -10,8 +10,9 @@ export default async function AdminLayout({
 
     return (
         <div className="admin-layout relative">
-            {isAuth && <AdminSession timeoutMs={600000} />}
-            {children}
+            <AdminLayoutWrapper>
+                {children}
+            </AdminLayoutWrapper>
         </div>
     );
 }
