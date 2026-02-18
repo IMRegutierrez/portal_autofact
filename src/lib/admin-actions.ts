@@ -37,7 +37,7 @@ const { serverRuntimeConfig } = getConfig();
 const TABLE_NAME = serverRuntimeConfig.PORTAL_TABLE_NAME || 'PortalClientes';
 
 // --- Authentication Helper ---
-async function isAuthenticated() {
+export async function isAuthenticated() {
     const { serverRuntimeConfig } = getConfig();
     const cookieStore = await cookies();
     const authCookie = cookieStore.get('admin_auth');
