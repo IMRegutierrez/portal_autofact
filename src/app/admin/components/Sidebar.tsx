@@ -19,59 +19,60 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
 
             {/* Sidebar */}
             <aside
-                className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-800 text-white transition-transform duration-300 transform lg:translate-x-0 lg:static lg:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
-                    } flex flex-col`}
+                className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#111827] text-gray-300 transition-transform duration-300 transform lg:translate-x-0 lg:static lg:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+                    } flex flex-col border-r border-gray-800`}
             >
                 {/* Brand Logo */}
-                <div className="flex h-16 items-center justify-center bg-slate-900 shadow-md">
-                    <Link href="/admin/dashboard" className="text-xl font-bold tracking-wider uppercase text-white hover:text-gray-200">
-                        <span className="text-indigo-500">IMR</span> Admin
+                <div className="flex h-16 items-center justify-center border-b border-gray-800 bg-[#111827]">
+                    <Link href="/admin/dashboard" className="text-lg font-semibold tracking-wide text-white transition-colors hover:text-indigo-400">
+                        <span className="text-indigo-500 font-bold">IMR</span> Portal
                     </Link>
                 </div>
 
                 {/* Navigation */}
-                <nav className="mt-5 flex-1 overflow-y-auto px-2">
-                    <div className="space-y-1">
-                        <Link
-                            href="/admin/dashboard"
-                            className={`group flex items-center rounded-md px-2 py-2 text-base font-medium transition-colors ${isActive('/admin/dashboard')
-                                    ? 'bg-slate-900 text-white'
-                                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                                }`}
-                        >
-                            <svg className="mr-4 h-6 w-6 flex-shrink-0 text-slate-400 group-hover:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                            Dashboard
-                        </Link>
+                <nav className="mt-6 flex-1 overflow-y-auto px-4 space-y-2">
+                    <Link
+                        href="/admin/dashboard"
+                        className={`group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive('/admin/dashboard')
+                            ? 'bg-indigo-600/10 text-indigo-400'
+                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                            }`}
+                    >
+                        <svg className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isActive('/admin/dashboard') ? 'text-indigo-400' : 'text-gray-500 group-hover:text-gray-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Dashboard
+                    </Link>
 
-                        <div className="pt-4 pb-2">
-                            <p className="px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Gestión</p>
-                        </div>
-
-                        <Link
-                            href="/admin/client/new"
-                            className={`group flex items-center rounded-md px-2 py-2 text-base font-medium transition-colors ${isActive('/admin/client/new')
-                                    ? 'bg-slate-900 text-white'
-                                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                                }`}
-                        >
-                            <svg className="mr-4 h-6 w-6 flex-shrink-0 text-slate-400 group-hover:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Nuevo Cliente
-                        </Link>
-
-                        {/* Add more links here later */}
+                    <div className="pt-6 pb-3">
+                        <p className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">Gestión</p>
                     </div>
+
+                    <Link
+                        href="/admin/client/new"
+                        className={`group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive('/admin/client/new')
+                            ? 'bg-indigo-600/10 text-indigo-400'
+                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                            }`}
+                    >
+                        <svg className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${isActive('/admin/client/new') ? 'text-indigo-400' : 'text-gray-500 group-hover:text-gray-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Nuevo Cliente
+                    </Link>
+
+                    {/* Add more links here later */}
                 </nav>
 
                 {/* User Info / Footer */}
-                <div className="border-t border-slate-700 p-4">
-                    <div className="flex items-center">
-                        <div className="ml-3">
+                <div className="border-t border-gray-800 p-4 bg-[#0f1522]">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white">
+                            A
+                        </div>
+                        <div>
                             <p className="text-sm font-medium text-white">Administrador</p>
-                            <p className="text-xs font-medium text-slate-400">Autofactura Portal</p>
+                            <p className="text-xs text-gray-500">Autofactura Portal</p>
                         </div>
                     </div>
                 </div>
