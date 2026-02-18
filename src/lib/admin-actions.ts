@@ -5,12 +5,14 @@ import { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, DeleteComm
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import getConfig from 'next/config';
 
 // --- Configuration Helper ---
 function getDbClient() {
-    const region = process.env.PORTAL_REGION;
-    const accessKeyId = process.env.PORTAL_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.PORTAL_SECRET_ACCESS_KEY;
+    const { serverRuntimeConfig } = getConfig();
+    const region = serverRuntimeConfig.PORTAL_REGION;
+    const accessKeyId = serverRuntimeConfig.PORTAL_ACCESS_KEY_ID;
+    const secretAccessKey = serverRuntimeConfig.PORTAL_SECRET_ACCESS_KEY;
 
     if (!region || !accessKeyId || !secretAccessKey) {
         console.error("Missing AWS Configuration:");
@@ -31,37 +33,32 @@ function getDbClient() {
     return DynamoDBDocumentClient.from(client);
 }
 
-const TABLE_NAME = process.env.PORTAL_TABLE_NAME || 'PortalClientes';
+const { serverRuntimeConfig } = getConfig();
+const TABLE_NAME = serverRuntimeConfig.PORTAL_TABLE_NAME || 'PortalClientes';
 
 // --- Authentication Helper ---
 async function isAuthenticated() {
+    const { serverRuntimeConfig } = getConfig();
     const cookieStore = await cookies();
     const authCookie = cookieStore.get('admin_auth');
-    if (!process.env.ADMIN_PASSWORD) {
+    if (!serverRuntimeConfig.ADMIN_PASSWORD) {
         console.error("ADMIN_PASSWORD environment variable is not set!");
         return false;
     }
-    return authCookie?.value === process.env.ADMIN_PASSWORD;
+    return authCookie?.value === serverRuntimeConfig.ADMIN_PASSWORD;
 }
 
 // --- Server Actions ---
 
 export async function login(prevState: any, formData: FormData) {
-    console.log("Login attempt received. PrevState:", prevState);
-    console.log("FormData type:", typeof formData);
-    console.log("FormData is null?", formData === null);
-
-    if (!formData) {
-        return { error: "Error: FormData is missing" };
-    }
-
+    const { serverRuntimeConfig } = getConfig();
     const password = formData.get('password') as string;
 
-    if (!process.env.ADMIN_PASSWORD) {
+    if (!serverRuntimeConfig.ADMIN_PASSWORD) {
         return { error: 'Error del servidor: Contraseña de administración no configurada.' };
     }
 
-    if (password === process.env.ADMIN_PASSWORD) {
+    if (password === serverRuntimeConfig.ADMIN_PASSWORD) {
         const cookieStore = await cookies();
         cookieStore.set('admin_auth', password, {
             httpOnly: true,
