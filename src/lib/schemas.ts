@@ -20,5 +20,41 @@ export const FiscalDataSchema = z.object({
   confirmedFromPortal: z.boolean().optional(),
 });
 
+export const ClientSchema = z.object({
+  clientId: z.string().min(1, "Client ID es requerido"),
+  clientName: z.string().min(1, "Nombre de cliente es requerido"),
+  isActive: z.boolean().default(true),
+
+  // Contact & Support
+  supportEmail: z.string().email("Email inválido").optional().or(z.literal('')),
+  whatsappNumber: z.string().optional(),
+
+  // NetSuite Config
+  netsuiteCompId: z.string().optional(),
+  suiteletUrl: z.string().url("URL inválida").min(1, "Suitelet URL es requerida"),
+  reportSuiteletUrl: z.string().url("URL inválida").optional().or(z.literal('')),
+  searchId: z.string().optional(),
+  senderId: z.string().optional(),
+
+  // Appearance - Logo & Layout
+  logoUrl: z.string().url("URL inválida").optional().or(z.literal('')),
+  logoHeight: z.string().optional(), // e.g. "h-44"
+
+  // Appearance - Colors
+  backgroundColor: z.string().optional(),
+  cardBackgroundColor: z.string().optional(),
+  primaryTextColor: z.string().optional(),
+  secondaryTextColor: z.string().optional(),
+  buttonColor: z.string().optional(),
+  buttonTextColor: z.string().optional(),
+
+  // Search Config
+  searchFieldsConfig: z.object({
+    primaryFieldLabel: z.string().default("Ticket a facturar"),
+    showTotalAmount: z.boolean().default(false)
+  }).optional(),
+});
+
 export type InvoiceSearchInputs = z.infer<typeof InvoiceSearchSchema>;
 export type FiscalDataInputs = z.infer<typeof FiscalDataSchema>;
+export type ClientInputs = z.infer<typeof ClientSchema>;

@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file', 'N/config'],
+define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file', 'N/config', 'N/email'],
     /**
      * @param {search} search
      * @param {record} record
@@ -14,7 +14,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
      * @param {file} file
      * @param {config} config
      */
-    function (search, record, log, url, https, encode, file, config) {
+    function (search, record, log, url, https, encode, file, config, email) {
 
         function onRequest(context) {
             // --- SECURITY IMPROVEMENT: CORS RESTRICTION ---
@@ -191,7 +191,119 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
 
                         // Aquí iría el código de timbrado original...
                         // He simplificado este bloque para el ejemplo de "Optimization".
-                        responseData.message = "Funcionalidad de timbrado optimizada pendiente de integración completa.";
+
+                        var SENDER_ID = -5; // ID del autor del correo (ej. -5 para el usuario actual)
+                        if (!invoiceOrCustomerId) {
+                            responseData.message = 'Parámetro incompleto: Se requiere ID de Factura.';
+                            context.response.write(JSON.stringify(responseData));
+                            return;
+                        }
+                        var recordType = context.request.parameters.recordType || 'invoice'; // Por defecto, 'invoice'
+                        var usoCfdi = getUsoCfdi(context.request.parameters.custpage_uso_cfdi);
+                        var facturaTimbrar = record.load({ type: record.Type.INVOICE, id: invoiceOrCustomerId, isDynamic: true });
+                        var subsidiaryTransaccion = facturaTimbrar.getValue({ fieldId: "subsidiary" });
+                        facturaTimbrar.setValue({ fieldId: 'custbody_fe_razon_social', value: context.request.parameters.custpage_razon_social });
+                        facturaTimbrar.setValue({ fieldId: 'custbody_ce_rfc', value: context.request.parameters.custpage_rfc });
+                        facturaTimbrar.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: context.request.parameters.custpage_regimen_fiscal });
+                        facturaTimbrar.setValue({ fieldId: 'custbody_uso_cfdi_fe_imr_33', value: usoCfdi });
+                        facturaTimbrar.setValue({ fieldId: 'custbody_codigo_postal_fiscal', value: context.request.parameters.custpage_codigo_postal_fiscal });
+                        facturaTimbrar.save();
+
+                        var DataConfigTimbre = searchData("customrecord_fe_sf_config", null, [
+                            search.createFilter({ name: "internalid", operator: search.Operator.ANYOF, values: [subsidiaryTransaccion] })
+                        ], "customsearch_fe_sf_config");
+                        var scriptTimbre = DataConfigTimbre[0].getValue({ name: "custrecord_fe_imr_pac_script_timbrado", join: "custrecord_fe_imr_pac" }) || 'customscript_fe_sf_st_moderna_33';
+                        var deployTimbre = DataConfigTimbre[0].getValue({ name: "custrecord_fe_imr_pac_deploy_timbrado", join: "custrecord_fe_imr_pac" }) || 'customdeploy_fe_sf_st_moderna_33';
+                        var emailAuthor = DataConfigTimbre[0].getValue({ name: "custrecord_ce_timbrado_author" }) || '';
+                        log.error({ title: 'scriptTimbre ', details: scriptTimbre });
+                        log.error({ title: 'deployTimbre ', details: deployTimbre });
+                        var suiteletURL = url.resolveScript({ scriptId: scriptTimbre, deploymentId: deployTimbre, returnExternalUrl: true });
+                        suiteletURL += '&data=' + encode.convert({
+                            string: JSON.stringify({ "recordType": recordType, "recordId": invoiceOrCustomerId, "titleForm": "Factura Electrónica", "_fe_portal_cliente": "T" }),
+                            inputEncoding: encode.Encoding.UTF_8,
+                            outputEncoding: encode.Encoding.BASE_64
+                        });
+                        try {
+                            var response = https.get({ url: suiteletURL });
+                            log.error({ title: 'response ', details: response.body });
+                        } catch (error) {
+                            log.error({ title: 'error', details: error });
+                        }
+
+                        var fieldFe = search.lookupFields({
+                            type: recordType,
+                            id: invoiceOrCustomerId,
+                            columns: ['custbody_fe_sf_codigo_respuesta', 'custbody_fe_sf_mensaje_respuesta', 'custbody_fe_sf_xml_sat', 'custbody_fe_sf_pdf']
+                        });
+                        //Timbrado exitoso
+                        if (fieldFe.custbody_fe_sf_codigo_respuesta === 200 || fieldFe.custbody_fe_sf_codigo_respuesta === '200.0') {
+
+                            responseData.success = true;
+                            responseData.message = fieldFe.custbody_fe_sf_mensaje_respuesta;
+
+                            var urlFile = url.resolveScript({ scriptId: 'customscript_fe_fel_files_st', deploymentId: 'customdeploy_fe_fel_files_st', returnExternalUrl: true });
+                            var urlXml = urlFile + '&data=' + encode.convert({
+                                string: JSON.stringify({ "fileID": getPropertySearch(fieldFe, 'custbody_fe_sf_xml_sat', 'value'), "titleForm": "XML - SAT" }),
+                                inputEncoding: encode.Encoding.UTF_8,
+                                outputEncoding: encode.Encoding.BASE_64
+                            });
+
+                            var urlPDF = urlFile + '&data=' + encode.convert({
+                                string: JSON.stringify({ "fileID": getPropertySearch(fieldFe, 'custbody_fe_sf_pdf', 'value'), "titleForm": "PDF - SAT" }),
+                                inputEncoding: encode.Encoding.UTF_8,
+                                outputEncoding: encode.Encoding.BASE_64
+                            });
+
+                            var fieldFe = search.lookupFields({
+                                type: recordType,
+                                id: invoiceOrCustomerId,
+                                columns: ['custbody_fe_sf_codigo_respuesta', 'custbody_fe_sf_mensaje_respuesta', 'custbody_fe_sf_xml_sat', 'custbody_fe_sf_pdf']
+                            });
+
+                            var xmlFileId = fieldFe.custbody_fe_sf_xml_sat ? fieldFe.custbody_fe_sf_xml_sat[0].value : null;
+                            var pdfFileId = fieldFe.custbody_fe_sf_pdf ? fieldFe.custbody_fe_sf_pdf[0].value : null;
+
+                            if (!xmlFileId || !pdfFileId) {
+                                throw new Error("No se encontraron los archivos XML y PDF generados después del timbrado.");
+                            }
+
+                            // --- 3. ENVIAR CORREO AL CLIENTE (SI PROPORCIONÓ UN EMAIL) ---
+                            log.debug('Customer Email', customerEmail);
+                            if (customerEmail) {
+                                // Cargar los archivos para adjuntarlos
+                                var xmlFile = file.load({ id: xmlFileId });
+                                var pdfFile = file.load({ id: pdfFileId });
+
+                                // Opcional: Usar una plantilla de correo para un formato profesional
+                                // const emailTemplateId = 123; // ID de tu plantilla de correo en Netsuite
+                                // const mergeResult = render.mergeEmail({
+                                //     templateId: emailTemplateId,
+                                //     transactionId: parseInt(invoiceInternalId)
+                                // });
+                                // const emailSubject = mergeResult.subject;
+                                // const emailBody = mergeResult.body;
+
+                                email.send({
+                                    author: SENDER_ID,
+                                    recipients: customerEmail,
+                                    // subject: emailSubject || `Su Factura Electrónica ${invoiceInternalId}`,
+                                    // body: emailBody || `Estimado cliente, adjuntamos los archivos de su factura.`,
+                                    subject: 'Su Factura Electrónica',
+                                    body: 'Estimado cliente,\n\nAdjuntamos los archivos XML y PDF de su Comprobante Fiscal Digital por Internet (CFDI).\n\nGracias por su preferencia.',
+                                    attachments: [xmlFile, pdfFile]
+                                });
+                            }
+
+                            responseData.invoiceData = {
+                                xmlUrl: urlXml,
+                                pdfUrl: urlPDF,
+                            }
+
+                        } else {
+                            responseData.success = false;
+                            responseData.message = 'Error al timbrar: ' + fieldFe.custbody_fe_sf_mensaje_respuesta;
+                        }
+                        //responseData.message = "Funcionalidad de timbrado optimizada pendiente de integración completa.";
                     }
 
                 } else {
@@ -207,6 +319,56 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                 value: 'application/json'
             });
             context.response.write(JSON.stringify(responseData));
+        }
+
+        function searchData(type, columns, filters, idSearch) {
+            var data = [];
+            var searchData = null;
+            if (idSearch) {
+                searchData = search.load({ id: idSearch });
+                searchData.filters = searchData.filters || [];
+                searchData.columns = searchData.columns || [];
+                searchData.filters = searchData.filters.concat(filters || []);
+                searchData.columns = searchData.columns.concat(columns || []);
+            } else {
+                searchData = search.create({ type: type, columns: columns, filters: filters });
+            }
+            var PagedData = searchData.runPaged();
+            PagedData.pageRanges.forEach(function (pageRange) {
+                var Page = PagedData.fetch({ index: pageRange.index });
+                Page.data.forEach(function (result) {
+                    data.push(result);
+                });
+            });
+            return data;
+        }
+
+        function getPropertySearch(obj, field, type) {
+            if (obj[field] && obj[field].length > 0) {
+                return obj[field][0][type];
+            }
+            if (obj[field] && !obj[field].length) {
+                return obj[field];
+            }
+            return '';
+        }
+
+        function getUsoCfdi(usoCfdi) {
+            log.error('Uso CFDI buscado', usoCfdi);
+            var usoCfdiId = search.create({
+                type: 'customrecord_uso_cfdi_fe_33',
+                filters: [
+                    ['idtext', 'is', usoCfdi]
+                ],
+                columns: ['internalid']
+            }).run().getRange({ start: 0, end: 1 });
+            //log.error('Uso CFDI encontrado', usoCfdiId);
+            if (usoCfdiId && usoCfdiId.length > 0) {
+                return usoCfdiId[0].getValue('internalid');
+            } else {
+                log.error('Uso CFDI no encontrado', 'El uso CFDI especificado no existe: ' + usoCfdi);
+                return null; // O manejar el error de otra manera
+            }
         }
 
         return {
