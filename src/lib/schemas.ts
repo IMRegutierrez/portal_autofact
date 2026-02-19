@@ -24,6 +24,8 @@ export const ClientSchema = z.object({
   clientId: z.string().min(1, "Client ID es requerido"),
   clientName: z.string().min(1, "Nombre de cliente es requerido"),
   isActive: z.boolean().default(true),
+  validFrom: z.string().optional(),
+  validTo: z.string().optional(),
 
   // Contact & Support
   supportEmail: z.string().email("Email inválido").optional().or(z.literal('')),

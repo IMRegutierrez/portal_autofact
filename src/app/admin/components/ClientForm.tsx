@@ -97,6 +97,30 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             Portal Activo
                         </label>
                     </div>
+
+                    <div className="sm:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700">Válido Desde</label>
+                        <div className="mt-1">
+                            <input
+                                type="date"
+                                {...register("validFrom")}
+                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                            />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">Opcional. El portal no será accesible antes de esta fecha.</p>
+                    </div>
+
+                    <div className="sm:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700">Válido Hasta</label>
+                        <div className="mt-1">
+                            <input
+                                type="date"
+                                {...register("validTo")}
+                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                            />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">Opcional. El portal se inactivará después de esta fecha.</p>
+                    </div>
                 </div>
             </div>
 

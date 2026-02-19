@@ -8,8 +8,9 @@ interface ClientConfig {
     suiteletUrl: string;
     netsuiteCompId: string;
     clientName: string;
-    isActive?: boolean; // --- CAMBIO AQUÍ: Nuevo campo ---
-
+    isActive?: boolean;
+    validFrom?: string; // YYYY-MM-DD
+    validTo?: string;   // YYYY-MM-DD
 }
 
 // Interfaz para la configuración de AWS
@@ -43,26 +44,46 @@ export default async function Page(props: any) {
             clientConfig = (await getClientConfig(clientId, awsConfig)) as ClientConfig | null;
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
-            }
-            // --- CAMBIO AQUÍ: Validación de portal activo ---
-            // Si isActive es false explícitamente, bloqueamos el acceso.
-            // Si el campo no existe, asumimos que está activo (true) por defecto, 
-            // pero puedes cambiar la lógica a (clientConfig.isActive !== true) si quieres que sea obligatorio.
-            else if (clientConfig.isActive === false) {
-                return (
-                    <main className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-                        <div className="text-center bg-white p-10 rounded-xl shadow-lg max-w-md w-full">
-                            <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            <h1 className="text-2xl font-bold text-gray-800 mb-2">Portal no disponible</h1>
-                            <p className="text-gray-600">
-                                El portal de facturación para <strong>{clientConfig.clientName}</strong> se encuentra temporalmente inhabilitado o en mantenimiento.
-                            </p>
-                            <p className="text-gray-500 text-sm mt-4">Por favor, contacte al administrador.</p>
-                        </div>
-                    </main>
-                );
+            } else {
+                // Validación de portal activo y vigencia
+                const now = new Date();
+                // Ajustamos a zona horaria de México para evitar desacoples por UTC
+                const mexicoDateStr = now.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" }); // YYYY-MM-DD
+
+                let isExpired = false;
+                let message = "El portal se encuentra temporalmente inhabilitado o en mantenimiento.";
+
+                // 1. Chequeo de flag explícito
+                if (clientConfig.isActive === false) {
+                    isExpired = true;
+                }
+                // 2. Chequeo de Fecha Inicio (validFrom)
+                else if (clientConfig.validFrom && mexicoDateStr < clientConfig.validFrom) {
+                    isExpired = true;
+                    message = `El portal estará disponible a partir del ${clientConfig.validFrom}.`;
+                }
+                // 3. Chequeo de Fecha Fin (validTo)
+                else if (clientConfig.validTo && mexicoDateStr > clientConfig.validTo) {
+                    isExpired = true;
+                    message = "La vigencia de este portal ha expirado.";
+                }
+
+                if (isExpired) {
+                    return (
+                        <main className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+                            <div className="text-center bg-white p-10 rounded-xl shadow-lg max-w-md w-full">
+                                <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <h1 className="text-2xl font-bold text-gray-800 mb-2">Portal no disponible</h1>
+                                <p className="text-gray-600">
+                                    {message}
+                                </p>
+                                <p className="text-gray-500 text-sm mt-4">Por favor, contacte al administrador si cree que esto es un error.</p>
+                            </div>
+                        </main>
+                    );
+                }
             }
 
         } catch (e: any) {
