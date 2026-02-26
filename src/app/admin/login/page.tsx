@@ -10,9 +10,9 @@ function SubmitButton() {
         <button
             type="submit"
             disabled={pending}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            className="w-full flex justify-center py-[14px] px-4 border border-transparent rounded-full shadow-sm text-[15px] font-medium text-white bg-[#635Bff] hover:bg-[#524ae6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#635Bff] disabled:opacity-50 transition-colors"
         >
-            {pending ? 'Iniciando...' : 'Iniciar Sesión'}
+            {pending ? 'Logging in...' : 'Login'}
         </button>
     );
 }
@@ -21,40 +21,66 @@ export default function LoginPage() {
     const [state, formAction] = useActionState(login, null);
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Administración Portal
-                </h2>
-            </div>
+        <div className="min-h-screen bg-[#f8f9fd] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+            <div className="sm:mx-auto sm:w-full sm:max-w-[440px]">
+                <div className="bg-white py-12 px-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[28px] border border-[#f1f2f5]">
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                    <div className="text-center mb-10">
+                        <h2 className="text-[32px] font-bold text-[#1a1f36]">
+                            Login
+                        </h2>
+                        <p className="mt-2 text-[15px] text-[#6b7280]">
+                            Please sign in to continue
+                        </p>
+                    </div>
+
                     <form action={formAction} className="space-y-6">
+                        {/* 
+                            Campo de email removido 
+                        */}
+
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Contraseña de Administrador
-                            </label>
-                            <div className="mt-1">
+                            <div className="relative mt-1">
+                                <div className="absolute inset-y-0 left-0 pl-[18px] flex items-center pointer-events-none">
+                                    <svg className="h-[20px] w-[20px] text-[#9ca3af]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
                                 <input
                                     id="password"
                                     name="password"
                                     type="password"
                                     autoComplete="current-password"
                                     required
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                                    placeholder="Password"
+                                    className="appearance-none block w-full pl-[46px] pr-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                                 />
                             </div>
                         </div>
 
                         {state?.error && (
-                            <div className="text-red-600 text-sm">
+                            <div className="text-red-500 text-sm text-center">
                                 {state.error}
                             </div>
                         )}
 
+                        <div className="flex items-center justify-start mt-4 mb-2">
+                            <div className="text-[14px]">
+                                <a href="#" className="font-medium text-[#635Bff] hover:text-[#524ae6]">
+                                    Forgot password?
+                                </a>
+                            </div>
+                        </div>
+
                         <div>
                             <SubmitButton />
+                        </div>
+
+                        <div className="mt-8 text-center text-[15px] text-[#6b7280]">
+                            Don't have an account?{' '}
+                            <a href="#" className="font-medium text-[#635Bff] hover:text-[#524ae6]">
+                                Sign up
+                            </a>
                         </div>
                     </form>
                 </div>
