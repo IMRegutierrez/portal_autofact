@@ -12,7 +12,7 @@ function SubmitButton() {
             disabled={pending}
             className="w-full flex justify-center py-[14px] px-4 border border-transparent rounded-full shadow-sm text-[15px] font-medium text-white bg-[#635Bff] hover:bg-[#524ae6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#635Bff] disabled:opacity-50 transition-colors"
         >
-            {pending ? 'Logging in...' : 'Login'}
+            {pending ? 'Iniciando sesión...' : 'Iniciar sesión'}
         </button>
     );
 }
@@ -30,7 +30,7 @@ export default function LoginPage() {
                             Admin | Portal de facturación
                         </h2>
                         <p className="mt-2 text-[15px] text-[#6b7280]">
-                            Iniciar sesión
+                            Inicia sesión para continuar
                         </p>
                     </div>
 
