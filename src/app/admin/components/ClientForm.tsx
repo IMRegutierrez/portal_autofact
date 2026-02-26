@@ -46,7 +46,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 bg-white p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[28px] border border-[#f1f2f5] font-sans">
 
             {/* Sección 1: Información General */}
             <div>
@@ -58,7 +58,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             <input
                                 {...register("clientId", { required: "El Client ID es requerido" })}
                                 readOnly={!!initialData}
-                                className={`shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900 ${initialData ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                className={`appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors ${initialData ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             />
                             {errors.clientId && <p className="text-red-500 text-xs mt-1">{errors.clientId.message as string}</p>}
                         </div>
@@ -69,7 +69,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("clientName", { required: "El nombre es requerido" })}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -79,7 +79,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("supportEmail")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -89,7 +89,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("whatsappNumber")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -99,7 +99,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             id="isActive"
                             type="checkbox"
                             {...register("isActive")}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            className="h-5 w-5 text-[#635Bff] focus:ring-[#635Bff] border-[#e5e7eb] rounded"
                         />
                         <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
                             Portal Activo
@@ -112,7 +112,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             <input
                                 type="date"
                                 {...register("validFrom")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                         <p className="mt-1 text-xs text-gray-500">Opcional. El portal no será accesible antes de esta fecha.</p>
@@ -124,7 +124,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             <input
                                 type="date"
                                 {...register("validTo")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                         <p className="mt-1 text-xs text-gray-500">Opcional. El portal se inactivará después de esta fecha.</p>
@@ -141,7 +141,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("netsuiteCompId")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -151,7 +151,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("senderId")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -161,7 +161,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("suiteletUrl", { required: "La URL del Suitelet es requerida" })}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -171,7 +171,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("reportSuiteletUrl")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -181,7 +181,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <div className="mt-1">
                             <input
                                 {...register("searchId")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -198,7 +198,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             <input
                                 {...register("logoUrl")}
                                 placeholder="https://..."
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                             <div className="flex items-center">
                                 <span className="text-xs text-gray-500 mr-2">O subir:</span>
@@ -244,7 +244,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             <input
                                 {...register("logoHeight")}
                                 placeholder="h-12, h-44..."
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -257,12 +257,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                                 type="color"
                                 value={backgroundColor || "#ffffff"}
                                 onChange={(e) => setValue("backgroundColor", e.target.value, { shouldDirty: true })}
-                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                                className="h-[50px] w-[50px] rounded-[14px] border border-[#e5e7eb] p-1 cursor-pointer bg-white"
                             />
                             <input
                                 type="text"
                                 {...register("backgroundColor")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -273,12 +273,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                                 type="color"
                                 value={cardBackgroundColor || "#ffffff"}
                                 onChange={(e) => setValue("cardBackgroundColor", e.target.value, { shouldDirty: true })}
-                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                                className="h-[50px] w-[50px] rounded-[14px] border border-[#e5e7eb] p-1 cursor-pointer bg-white"
                             />
                             <input
                                 type="text"
                                 {...register("cardBackgroundColor")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -289,12 +289,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                                 type="color"
                                 value={buttonColor || "#ffffff"}
                                 onChange={(e) => setValue("buttonColor", e.target.value, { shouldDirty: true })}
-                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                                className="h-[50px] w-[50px] rounded-[14px] border border-[#e5e7eb] p-1 cursor-pointer bg-white"
                             />
                             <input
                                 type="text"
                                 {...register("buttonColor")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -305,12 +305,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                                 type="color"
                                 value={primaryTextColor || "#ffffff"}
                                 onChange={(e) => setValue("primaryTextColor", e.target.value, { shouldDirty: true })}
-                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                                className="h-[50px] w-[50px] rounded-[14px] border border-[#e5e7eb] p-1 cursor-pointer bg-white"
                             />
                             <input
                                 type="text"
                                 {...register("primaryTextColor")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -321,12 +321,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                                 type="color"
                                 value={secondaryTextColor || "#ffffff"}
                                 onChange={(e) => setValue("secondaryTextColor", e.target.value, { shouldDirty: true })}
-                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                                className="h-[50px] w-[50px] rounded-[14px] border border-[#e5e7eb] p-1 cursor-pointer bg-white"
                             />
                             <input
                                 type="text"
                                 {...register("secondaryTextColor")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -337,12 +337,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                                 type="color"
                                 value={buttonTextColor || "#ffffff"}
                                 onChange={(e) => setValue("buttonTextColor", e.target.value, { shouldDirty: true })}
-                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                                className="h-[50px] w-[50px] rounded-[14px] border border-[#e5e7eb] p-1 cursor-pointer bg-white"
                             />
                             <input
                                 type="text"
                                 {...register("buttonTextColor")}
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -359,7 +359,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             <input
                                 {...register("searchFieldsConfig.primaryFieldLabel")}
                                 placeholder="Ej: Ticket a facturar"
-                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                             />
                         </div>
                     </div>
@@ -368,7 +368,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             id="showTotalAmount"
                             type="checkbox"
                             {...register("searchFieldsConfig.showTotalAmount")}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            className="h-5 w-5 text-[#635Bff] focus:ring-[#635Bff] border-[#e5e7eb] rounded"
                         />
                         <label htmlFor="showTotalAmount" className="ml-2 block text-sm text-gray-900">
                             Mostrar campo "Monto Total"
@@ -393,7 +393,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <button
                             type="button"
                             onClick={handleDelete}
-                            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                            className="inline-flex justify-center py-[14px] px-6 border border-transparent rounded-full shadow-sm text-[15px] font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                         >
                             Eliminar Cliente
                         </button>
@@ -403,14 +403,14 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <button
                         type="button"
                         onClick={() => router.back()}
-                        className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                        className="bg-white py-[14px] px-6 border border-[#e5e7eb] rounded-full shadow-sm text-[15px] font-medium text-[#1a1f36] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#635Bff] transition-colors"
                     >
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmitting || isUploadingLogo}
-                        className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
+                        className="inline-flex justify-center py-[14px] px-6 border border-transparent rounded-full shadow-sm text-[15px] font-medium text-white bg-[#635Bff] hover:bg-[#524ae6] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#635Bff] disabled:opacity-50 transition-colors"
                     >
                         {isSubmitting ? 'Guardando...' : 'Guardar Cliente'}
                     </button>
