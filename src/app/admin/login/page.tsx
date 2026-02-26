@@ -52,7 +52,7 @@ export default function LoginPage() {
                                     type="password"
                                     autoComplete="current-password"
                                     required
-                                    placeholder="Password"
+                                    placeholder="Contraseña"
                                     className="appearance-none block w-full pl-[46px] pr-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
                                 />
                             </div>
