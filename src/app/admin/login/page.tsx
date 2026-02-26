@@ -27,10 +27,10 @@ export default function LoginPage() {
 
                     <div className="text-center mb-10">
                         <h2 className="text-[32px] font-bold text-[#1a1f36]">
-                            Login
+                            Admin | Portal de facturación
                         </h2>
                         <p className="mt-2 text-[15px] text-[#6b7280]">
-                            Please sign in to continue
+                            Iniciar sesión
                         </p>
                     </div>
 
@@ -67,20 +67,13 @@ export default function LoginPage() {
                         <div className="flex items-center justify-start mt-4 mb-2">
                             <div className="text-[14px]">
                                 <a href="#" className="font-medium text-[#635Bff] hover:text-[#524ae6]">
-                                    Forgot password?
+                                    ¿Olvidaste la contraseña?
                                 </a>
                             </div>
                         </div>
 
                         <div>
                             <SubmitButton />
-                        </div>
-
-                        <div className="mt-8 text-center text-[15px] text-[#6b7280]">
-                            Don't have an account?{' '}
-                            <a href="#" className="font-medium text-[#635Bff] hover:text-[#524ae6]">
-                                Sign up
-                            </a>
                         </div>
                     </form>
                 </div>
