@@ -24,6 +24,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
     const secondaryTextColor = watch("secondaryTextColor");
     const buttonTextColor = watch("buttonTextColor");
     const [submitError, setSubmitError] = useState('');
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
     const onSubmit = async (data: any) => {
         setSubmitError('');
@@ -192,12 +193,49 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                 <h3 className="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Apariencia y Branding</h3>
                 <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                     <div className="sm:col-span-4">
-                        <label className="block text-sm font-medium text-gray-700">Logo URL</label>
-                        <div className="mt-1">
+                        <label className="block text-sm font-medium text-gray-700">Logo (URL o Archivo)</label>
+                        <div className="mt-1 flex flex-col space-y-2">
                             <input
                                 {...register("logoUrl")}
+                                placeholder="https://..."
                                 className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md text-gray-900"
                             />
+                            <div className="flex items-center">
+                                <span className="text-xs text-gray-500 mr-2">O subir:</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    disabled={isUploadingLogo}
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        setIsUploadingLogo(true);
+                                        try {
+                                            const { uploadLogo } = await import('@/lib/admin-actions');
+                                            const formData = new FormData();
+                                            formData.append('file', file);
+                                            const res = await uploadLogo(formData);
+                                            if (res.error) {
+                                                alert(res.error);
+                                            } else if (res.url) {
+                                                setValue("logoUrl", res.url, { shouldDirty: true });
+                                            }
+                                        } catch (error) {
+                                            console.error(error);
+                                            alert("Ocurrió un error al subir el logo.");
+                                        } finally {
+                                            setIsUploadingLogo(false);
+                                        }
+                                    }}
+                                    className="block w-full text-sm text-gray-500
+                                      file:mr-4 file:py-1.5 file:px-3
+                                      file:rounded-md file:border-0
+                                      file:text-sm file:font-semibold
+                                      file:bg-indigo-50 file:text-indigo-700
+                                      hover:file:bg-indigo-100 cursor-pointer disabled:opacity-50"
+                                />
+                                {isUploadingLogo && <span className="text-xs text-indigo-600 animate-pulse">Subiendo...</span>}
+                            </div>
                         </div>
                     </div>
                     <div className="sm:col-span-2">
@@ -371,7 +409,7 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     </button>
                     <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isUploadingLogo}
                         className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
                     >
                         {isSubmitting ? 'Guardando...' : 'Guardar Cliente'}

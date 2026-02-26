@@ -2,6 +2,7 @@
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -160,5 +161,59 @@ export async function deleteClient(clientId: string) {
     } catch (error: any) {
         console.error("Error deleting client:", error);
         return { error: `Error al eliminar: ${error.message}` };
+    }
+}
+
+export async function uploadLogo(formData: FormData) {
+    if (!(await isAuthenticated())) {
+        return { error: "No autorizado" };
+    }
+
+    const file = formData.get('file') as File;
+    if (!file) {
+        return { error: "No se proporcionó ningún archivo" };
+    }
+
+    const { serverRuntimeConfig } = getConfig();
+    const region = serverRuntimeConfig.PORTAL_REGION;
+    const accessKeyId = serverRuntimeConfig.PORTAL_ACCESS_KEY_ID;
+    const secretAccessKey = serverRuntimeConfig.PORTAL_SECRET_ACCESS_KEY;
+    const bucketName = process.env.PORTAL_S3_BUCKET || 'portalautofact';
+
+    if (!region || !accessKeyId || !secretAccessKey) {
+        return { error: "Credenciales de AWS no configuradas" };
+    }
+
+    const s3Client = new S3Client({
+        region: region,
+        credentials: {
+            accessKeyId: accessKeyId,
+            secretAccessKey: secretAccessKey,
+        },
+    });
+
+    try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        // Limpiamos el nombre original para evitar caracteres raros y le añadimos un timestamp
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `PortalLogos/${Date.now()}-${cleanFileName}`;
+
+        const command = new PutObjectCommand({
+            Bucket: bucketName,
+            Key: fileName,
+            Body: buffer,
+            ContentType: file.type,
+            // Opcional: ACL: 'public-read' 
+            // AWS deshabilitó los ACLs por defecto en los buckets nuevos,
+            // se asume que las políticas del bucket y/o la ruta permiten lectura pública.
+        });
+
+        await s3Client.send(command);
+
+        const url = `https://${bucketName}.s3.${region}.amazonaws.com/${fileName}`;
+        return { success: true, url };
+    } catch (error: any) {
+        console.error("Error uploading to S3:", error);
+        return { error: `Error al subir la imagen: ${error.message}` };
     }
 }
