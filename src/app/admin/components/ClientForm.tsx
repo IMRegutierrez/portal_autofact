@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 export default function ClientForm({ initialData }: { initialData?: any }) {
     const router = useRouter();
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
         defaultValues: initialData || {
             isActive: true,
             searchFieldsConfig: {
@@ -16,6 +16,13 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
             }
         }
     });
+
+    const backgroundColor = watch("backgroundColor");
+    const cardBackgroundColor = watch("cardBackgroundColor");
+    const buttonColor = watch("buttonColor");
+    const primaryTextColor = watch("primaryTextColor");
+    const secondaryTextColor = watch("secondaryTextColor");
+    const buttonTextColor = watch("buttonTextColor");
     const [submitError, setSubmitError] = useState('');
 
     const onSubmit = async (data: any) => {
@@ -208,7 +215,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Fondo General</label>
                         <div className="mt-1 flex items-center space-x-2">
-                            <input type="color" {...register("backgroundColor")} className="h-9 w-12 rounded border border-gray-300 p-1" />
+                            <input
+                                type="color"
+                                value={backgroundColor || "#ffffff"}
+                                onChange={(e) => setValue("backgroundColor", e.target.value, { shouldDirty: true })}
+                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                            />
                             <input
                                 type="text"
                                 {...register("backgroundColor")}
@@ -219,7 +231,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Fondo Tarjetas</label>
                         <div className="mt-1 flex items-center space-x-2">
-                            <input type="color" {...register("cardBackgroundColor")} className="h-9 w-12 rounded border border-gray-300 p-1" />
+                            <input
+                                type="color"
+                                value={cardBackgroundColor || "#ffffff"}
+                                onChange={(e) => setValue("cardBackgroundColor", e.target.value, { shouldDirty: true })}
+                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                            />
                             <input
                                 type="text"
                                 {...register("cardBackgroundColor")}
@@ -230,7 +247,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Color Botones</label>
                         <div className="mt-1 flex items-center space-x-2">
-                            <input type="color" {...register("buttonColor")} className="h-9 w-12 rounded border border-gray-300 p-1" />
+                            <input
+                                type="color"
+                                value={buttonColor || "#ffffff"}
+                                onChange={(e) => setValue("buttonColor", e.target.value, { shouldDirty: true })}
+                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                            />
                             <input
                                 type="text"
                                 {...register("buttonColor")}
@@ -241,7 +263,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Texto Primario</label>
                         <div className="mt-1 flex items-center space-x-2">
-                            <input type="color" {...register("primaryTextColor")} className="h-9 w-12 rounded border border-gray-300 p-1" />
+                            <input
+                                type="color"
+                                value={primaryTextColor || "#ffffff"}
+                                onChange={(e) => setValue("primaryTextColor", e.target.value, { shouldDirty: true })}
+                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                            />
                             <input
                                 type="text"
                                 {...register("primaryTextColor")}
@@ -252,7 +279,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Texto Secundario</label>
                         <div className="mt-1 flex items-center space-x-2">
-                            <input type="color" {...register("secondaryTextColor")} className="h-9 w-12 rounded border border-gray-300 p-1" />
+                            <input
+                                type="color"
+                                value={secondaryTextColor || "#ffffff"}
+                                onChange={(e) => setValue("secondaryTextColor", e.target.value, { shouldDirty: true })}
+                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                            />
                             <input
                                 type="text"
                                 {...register("secondaryTextColor")}
@@ -263,7 +295,12 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                     <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Texto Botones</label>
                         <div className="mt-1 flex items-center space-x-2">
-                            <input type="color" {...register("buttonTextColor")} className="h-9 w-12 rounded border border-gray-300 p-1" />
+                            <input
+                                type="color"
+                                value={buttonTextColor || "#ffffff"}
+                                onChange={(e) => setValue("buttonTextColor", e.target.value, { shouldDirty: true })}
+                                className="h-9 w-12 rounded border border-gray-300 p-1"
+                            />
                             <input
                                 type="text"
                                 {...register("buttonTextColor")}
