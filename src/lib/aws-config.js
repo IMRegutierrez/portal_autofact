@@ -19,23 +19,21 @@ export async function getClientConfig(clientId, awsConfig) {
 
     const { accessKeyId, secretAccessKey, region, tableName } = awsConfig;
 
-    // --- CORRECCIÓN AQUÍ ---
-    // Se valida cada variable de entorno individualmente para un diagnóstico preciso.
-    // Si alguna falta, se lanza un error específico que será capturado en page.tsx.
+    // Se valida que las variables de entorno existan.
     if (!region) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_REGION falta o está vacía.");
+        throw new Error("La configuración del servidor está incompleta: La variable PORTAL_REGION falta o está vacía.");
     }
     if (!tableName) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_DYNAMODB_TABLE_NAME falta o está vacía.");
+        throw new Error("La configuración del servidor está incompleta: La variable PORTAL_TABLE_NAME falta o está vacía.");
     }
     if (!accessKeyId) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_ACCESS_KEY_ID falta o está vacía.");
+        throw new Error("La configuración del servidor está incompleta: La variable PORTAL_ACCESS_KEY_ID falta o está vacía.");
     }
     if (!secretAccessKey) {
-        throw new Error("La configuración del servidor está incompleta: La variable PFACT_AWS_SECRET_ACCESS_KEY falta o está vacía.");
+        throw new Error("La configuración del servidor está incompleta: La variable PORTAL_SECRET_ACCESS_KEY falta o está vacía.");
     }
 
-    // Ahora que sabemos que las variables existen, podemos usarlas de forma segura.
+    // Se configura el cliente de DynamoDB usando las credenciales explícitas.
     const client = new DynamoDBClient({
         region: region,
         credentials: {
@@ -66,6 +64,6 @@ export async function getClientConfig(clientId, awsConfig) {
         }
     } catch (error) {
         console.error("Error al obtener datos de DynamoDB:", error);
-        throw new Error("No se pudo conectar con el servicio de configuración. Verifique los permisos y las credenciales.");
+        throw new Error("No se pudo conectar con el servicio de configuración. Verifique que las credenciales y los permisos sean correctos.");
     }
 }

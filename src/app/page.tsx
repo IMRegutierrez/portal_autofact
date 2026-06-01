@@ -1,14 +1,19 @@
+import getConfig from 'next/config';
 import { getClientConfig } from '../lib/aws-config';
 import PortalClientComponent from './PortalClientComponent';
 
-// ... (tus interfaces ClientConfig y AwsConfig se mantienen igual) ...
+// Interfaz para definir la estructura de la configuración del cliente
 interface ClientConfig {
-  clientId: string;
-  suiteletUrl: string;
-  netsuiteCompId: string;
-  clientName: string;
+    clientId: string;
+    suiteletUrl: string;
+    netsuiteCompId: string;
+    clientName: string;
+    isActive?: boolean;
+    validFrom?: string; // YYYY-MM-DD
+    validTo?: string;   // YYYY-MM-DD
 }
 
+// Interfaz para la configuración de AWS
 interface AwsConfig {
     accessKeyId: string | undefined;
     secretAccessKey: string | undefined;
@@ -16,20 +21,71 @@ interface AwsConfig {
     tableName: string | undefined;
 }
 
+// La página ahora es un único componente de servidor asíncrono.
+export default async function Page(props: any) {
+    const clientId = props.searchParams?.clientId;
 
-async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, awsConfig: AwsConfig }) {
-    // ... (el resto de esta función se mantiene igual) ...
+    // Se obtiene la configuración desde serverRuntimeConfig en next.config.js
+    const { serverRuntimeConfig } = getConfig();
+
+    const awsConfig: AwsConfig = {
+        accessKeyId: serverRuntimeConfig.PORTAL_ACCESS_KEY_ID,
+        secretAccessKey: serverRuntimeConfig.PORTAL_SECRET_ACCESS_KEY,
+        region: serverRuntimeConfig.PORTAL_REGION,
+        tableName: serverRuntimeConfig.PORTAL_TABLE_NAME,
+    };
+
     let clientConfig: ClientConfig | null = null;
     let error: string | null = null;
 
-    if (!awsConfig.region || !awsConfig.tableName || !awsConfig.accessKeyId || !awsConfig.secretAccessKey) {
-        error = "La configuración del servidor está incompleta. Faltan variables de entorno de AWS.";
-    } else if (clientId) {
+    if (clientId) {
         try {
+            // Llamamos a la función de DynamoDB directamente desde la página.
             clientConfig = (await getClientConfig(clientId, awsConfig)) as ClientConfig | null;
             if (!clientConfig) {
                 error = `No se encontró una configuración válida para el cliente '${clientId}'.`;
+            } else {
+                // Validación de portal activo y vigencia
+                const now = new Date();
+                // Ajustamos a zona horaria de México para evitar desacoples por UTC
+                const mexicoDateStr = now.toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" }); // YYYY-MM-DD
+
+                let isExpired = false;
+                let message = "El portal se encuentra temporalmente inhabilitado o en mantenimiento.";
+
+                // 1. Chequeo de flag explícito
+                if (clientConfig.isActive === false) {
+                    isExpired = true;
+                }
+                // 2. Chequeo de Fecha Inicio (validFrom)
+                else if (clientConfig.validFrom && mexicoDateStr < clientConfig.validFrom) {
+                    isExpired = true;
+                    message = `El portal estará disponible a partir del ${clientConfig.validFrom}.`;
+                }
+                // 3. Chequeo de Fecha Fin (validTo)
+                else if (clientConfig.validTo && mexicoDateStr > clientConfig.validTo) {
+                    isExpired = true;
+                    message = "La vigencia de este portal ha expirado.";
+                }
+
+                if (isExpired) {
+                    return (
+                        <main className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+                            <div className="text-center bg-white p-10 rounded-xl shadow-lg max-w-md w-full">
+                                <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <h1 className="text-2xl font-bold text-gray-800 mb-2">Portal no disponible</h1>
+                                <p className="text-gray-600">
+                                    {message}
+                                </p>
+                                <p className="text-gray-500 text-sm mt-4">Por favor, contacte al administrador si cree que esto es un error.</p>
+                            </div>
+                        </main>
+                    );
+                }
             }
+
         } catch (e: any) {
             error = e.message || "Error al conectar con el servicio de configuración.";
         }
@@ -37,6 +93,7 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
         error = "Bienvenido. Por favor, accede a través de la URL proporcionada para tu empresa.";
     }
 
+    // Si hay un error o no se encontró la configuración, mostramos un mensaje de error.
     if (error || !clientConfig) {
         return (
             <main className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center p-4 text-slate-100">
@@ -47,25 +104,9 @@ async function PortalPageContent({ clientId, awsConfig }: { clientId?: string, a
             </main>
         );
     }
+
+    // Si todo está bien, renderizamos el componente de cliente y le pasamos la configuración.
     return (
         <PortalClientComponent config={clientConfig} />
     );
-}
-
-export default function Page(props: any) {
-    // --- PASO DE DIAGNÓSTICO AQUÍ ---
-    // Imprimimos todas las variables de entorno disponibles en el servidor.
-    // Esto aparecerá en los logs de CloudWatch de tu aplicación.
-    console.log("Variables de entorno disponibles en el servidor:", process.env);
-
-    const clientId = props.searchParams?.clientId;
-
-    const awsConfig: AwsConfig = {
-        accessKeyId: process.env.PFACT_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.PFACT_AWS_SECRET_ACCESS_KEY,
-        region: process.env.PFACT_AWS_REGION,
-        tableName: process.env.PFACT_DYNAMODB_TABLE_NAME,
-    };
-
-    return <PortalPageContent clientId={clientId} awsConfig={awsConfig} />;
 }
