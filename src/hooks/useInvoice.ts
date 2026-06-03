@@ -28,9 +28,10 @@ interface UseInvoiceProps {
     suiteletUrl: string;
     clientId: string;
     searchId?: string;
+    searchMode?: 'invoice' | 'salesorder' | 'both';
 }
 
-export function useInvoice({ suiteletUrl, clientId, searchId }: UseInvoiceProps) {
+export function useInvoice({ suiteletUrl, clientId, searchId, searchMode }: UseInvoiceProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,9 @@ export function useInvoice({ suiteletUrl, clientId, searchId }: UseInvoiceProps)
             formData.append('custpage_invoice_total', data.invoiceTotal);
         }
         formData.append('custpage_client_id', clientId);
+        if (searchMode) {
+            formData.append('custpage_search_mode', searchMode);
+        }
 
         try {
             const response = await fetch(suiteletUrl, {

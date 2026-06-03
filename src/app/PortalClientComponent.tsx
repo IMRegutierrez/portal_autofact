@@ -26,6 +26,7 @@ interface ClientConfig {
     buttonTextColor?: string;
     searchId?: string;
     reportSuiteletUrl?: string;
+    searchMode?: 'invoice' | 'salesorder' | 'both';
     isActive?: boolean;
     whatsappNumber?: string;
     senderId?: string;
@@ -50,7 +51,8 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
     } = useInvoice({
         suiteletUrl: config.suiteletUrl,
         clientId: config.clientId,
-        searchId: config.searchId
+        searchId: config.searchId,
+        searchMode: config.searchMode
     });
 
     const {

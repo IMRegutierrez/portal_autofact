@@ -354,6 +354,20 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                 <h3 className="text-lg font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Configuración de Búsqueda</h3>
                 <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                     <div className="sm:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700">Modo de Búsqueda</label>
+                        <div className="mt-1">
+                            <select
+                                {...register("searchMode")}
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
+                            >
+                                <option value="invoice">Factura (default)</option>
+                                <option value="salesorder">Orden de Venta</option>
+                                <option value="both">Ambos (Factura → OV)</option>
+                            </select>
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">Define qué tipo de registro busca el portal al ingresar un folio.</p>
+                    </div>
+                    <div className="sm:col-span-3">
                         <label className="block text-sm font-medium text-gray-700">Etiqueta Campo Principal</label>
                         <div className="mt-1">
                             <input
