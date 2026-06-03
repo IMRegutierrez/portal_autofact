@@ -29,9 +29,10 @@ interface UseInvoiceProps {
     clientId: string;
     searchId?: string;
     searchMode?: 'invoice' | 'salesorder' | 'both';
+    searchField?: string;
 }
 
-export function useInvoice({ suiteletUrl, clientId, searchId, searchMode }: UseInvoiceProps) {
+export function useInvoice({ suiteletUrl, clientId, searchId, searchMode, searchField }: UseInvoiceProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -65,6 +66,9 @@ export function useInvoice({ suiteletUrl, clientId, searchId, searchMode }: UseI
         formData.append('custpage_client_id', clientId);
         if (searchMode) {
             formData.append('custpage_search_mode', searchMode);
+        }
+        if (searchField) {
+            formData.append('custpage_search_field', searchField);
         }
 
         try {

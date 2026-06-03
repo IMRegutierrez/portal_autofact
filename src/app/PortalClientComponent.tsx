@@ -27,6 +27,7 @@ interface ClientConfig {
     searchId?: string;
     reportSuiteletUrl?: string;
     searchMode?: 'invoice' | 'salesorder' | 'both';
+    searchField?: string;
     isActive?: boolean;
     whatsappNumber?: string;
     senderId?: string;
@@ -52,7 +53,8 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         suiteletUrl: config.suiteletUrl,
         clientId: config.clientId,
         searchId: config.searchId,
-        searchMode: config.searchMode
+        searchMode: config.searchMode,
+        searchField: config.searchField
     });
 
     const {

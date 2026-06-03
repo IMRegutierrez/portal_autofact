@@ -76,17 +76,18 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         }
 
                         var searchMode = context.request.parameters.custpage_search_mode || 'invoice';
+                        var searchField = context.request.parameters.custpage_search_field || 'tranid';
                         var searchResult = null;
                         var foundRecordType = null;
 
                         // Buscar según el modo configurado
                         if (searchMode === 'invoice' || searchMode === 'both') {
-                            searchResult = searchByFolio(invoiceOrCustomerId, 'invoice', searchId, search, record, file, config);
+                            searchResult = searchByFolio(invoiceOrCustomerId, 'invoice', searchId, searchField, search, record, file, config);
                             if (searchResult) foundRecordType = 'invoice';
                         }
 
                         if (!searchResult && (searchMode === 'salesorder' || searchMode === 'both')) {
-                            searchResult = searchByFolio(invoiceOrCustomerId, 'salesorder', null, search, record, file, config);
+                            searchResult = searchByFolio(invoiceOrCustomerId, 'salesorder', null, 'tranid', search, record, file, config);
                             if (searchResult) foundRecordType = 'salesorder';
                         }
 
@@ -259,7 +260,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
         }
 
 
-        function searchByFolio(folio, mode, searchId, search, record, file, config) {
+        function searchByFolio(folio, mode, searchId, folioField, search, record, file, config) {
             var invoiceColumns = [
                 search.createColumn({ name: 'tranid' }),
                 search.createColumn({ name: 'entity', label: 'CustomerInternalId' }),
@@ -291,7 +292,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
             if (searchId && mode !== 'salesorder') {
                 invoiceSearch = search.load({ id: searchId });
                 invoiceSearch.filters = (invoiceSearch.filters || []).concat([
-                    search.createFilter({ name: 'custbody_pos3_receiptnumber', operator: search.Operator.IS, values: folio })
+                    search.createFilter({ name: folioField || 'tranid', operator: search.Operator.IS, values: folio })
                 ]);
             } else {
                 invoiceSearch = search.create({

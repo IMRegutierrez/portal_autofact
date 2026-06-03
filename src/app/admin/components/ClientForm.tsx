@@ -368,6 +368,17 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         <p className="mt-1 text-xs text-gray-500">Define qué tipo de registro busca el portal al ingresar un folio.</p>
                     </div>
                     <div className="sm:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700">Campo de Búsqueda de Folio</label>
+                        <div className="mt-1">
+                            <input
+                                {...register("searchField")}
+                                placeholder="tranid (default)"
+                                className="appearance-none block w-full px-4 py-[14px] border border-[#e5e7eb] rounded-full placeholder-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#635Bff] focus:border-[#635Bff] text-[15px] text-[#1a1f36] bg-white transition-colors"
+                            />
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">Campo interno de NS para el folio (ej: custbody_pos3_receiptnumber). Solo aplica cuando se usa Search ID.</p>
+                    </div>
+                    <div className="sm:col-span-3">
                         <label className="block text-sm font-medium text-gray-700">Etiqueta Campo Principal</label>
                         <div className="mt-1">
                             <input
