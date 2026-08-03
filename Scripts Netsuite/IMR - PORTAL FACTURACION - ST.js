@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file', 'N/config'],
+define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file', 'N/config', 'N/email'],
     /**
      * @param {search} search
      * @param {record} record
@@ -13,8 +13,9 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
      * @param {encode} encode
      * @param {file} file
      * @param {config} config
+     * @param {email} email
      */
-    function (search, record, log, url, https, encode, file, config) {
+    function (search, record, log, url, https, encode, file, config, email) {
         /**
          * Definition of the Suitelet script trigger point.
          *
@@ -87,7 +88,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         }
 
                         if (!searchResult && (searchMode === 'salesorder' || searchMode === 'both')) {
-                            searchResult = searchByFolio(invoiceOrCustomerId, 'salesorder', null, 'tranid', search, record, file, config);
+                            searchResult = searchByFolio(invoiceOrCustomerId, 'salesorder', searchId, searchField, search, record, file, config);
                             if (searchResult) foundRecordType = 'salesorder';
                         }
 
@@ -113,24 +114,76 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             return;
                         }
                         var recordType = context.request.parameters.recordType || 'invoice';
+                        // Marca si la factura fue creada/derivada desde una OV en este flujo.
+                        // Se usa para borrar la factura si el timbrado falla y no dejar facturas huérfanas sin timbrar.
+                        var facturaCreadaDesdeOV = (recordType === 'salesorder');
 
                         // Si es OV, se transforma a factura antes de timbrar
                         if (recordType === 'salesorder') {
-                            log.audit('Portal: Transformando OV a Factura', 'OV ID: ' + invoiceOrCustomerId);
-                            var nuevaFactura = record.transform({
-                                fromType: record.Type.SALES_ORDER,
-                                fromId: parseInt(invoiceOrCustomerId),
-                                toType: record.Type.INVOICE,
-                                isDynamic: true
-                            });
-                            nuevaFactura.setValue({ fieldId: 'custbody_fe_razon_social', value: context.request.parameters.custpage_razon_social });
-                            nuevaFactura.setValue({ fieldId: 'custbody_ce_rfc', value: context.request.parameters.custpage_rfc });
-                            nuevaFactura.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: context.request.parameters.custpage_regimen_fiscal });
-                            nuevaFactura.setValue({ fieldId: 'custbody_uso_cfdi_fe_imr_33', value: getUsoCfdi(context.request.parameters.custpage_uso_cfdi) });
-                            nuevaFactura.setValue({ fieldId: 'custbody_codigo_postal_fiscal', value: context.request.parameters.custpage_codigo_postal_fiscal });
-                            invoiceOrCustomerId = String(nuevaFactura.save());
+                            var usoCfdiOV = getUsoCfdi(context.request.parameters.custpage_uso_cfdi);
+                            var fiscalValues = {
+                                razonSocial: context.request.parameters.custpage_razon_social,
+                                rfc: context.request.parameters.custpage_rfc,
+                                regimenFiscal: context.request.parameters.custpage_regimen_fiscal,
+                                usoCfdi: usoCfdiOV,
+                                codigoPostal: context.request.parameters.custpage_codigo_postal_fiscal
+                            };
+
+                            // Buscar si ya existe una factura sin timbrar creada desde esta OV para evitar duplicados
+                            var facturaExistente = search.create({
+                                type: search.Type.INVOICE,
+                                filters: [
+                                    search.createFilter({ name: 'createdfrom', operator: search.Operator.ANYOF, values: [invoiceOrCustomerId] }),
+                                    search.createFilter({ name: 'mainline', operator: search.Operator.IS, values: 'T' })
+                                ],
+                                columns: [
+                                    search.createColumn({ name: 'internalid' }),
+                                    search.createColumn({ name: 'custbody_fe_sf_codigo_respuesta' })
+                                ]
+                            }).run().getRange({ start: 0, end: 1 });
+
+                            if (facturaExistente && facturaExistente.length > 0) {
+                                var codRespExistente = facturaExistente[0].getValue({ name: 'custbody_fe_sf_codigo_respuesta' });
+                                if (codRespExistente == '200' || codRespExistente == '200.0') {
+                                    throw new Error('Ya existe una factura timbrada para esta orden de venta.');
+                                }
+                                // Reutilizar factura existente sin timbrar
+                                invoiceOrCustomerId = String(facturaExistente[0].id);
+                                log.audit('Portal: Reutilizando factura existente de OV', 'Factura ID: ' + invoiceOrCustomerId);
+                                var facturaReutilizar = record.load({ type: record.Type.INVOICE, id: invoiceOrCustomerId, isDynamic: true });
+                                facturaReutilizar.setValue({ fieldId: 'custbody_fe_razon_social', value: fiscalValues.razonSocial });
+                                setRFC(facturaReutilizar, fiscalValues.rfc);
+                                facturaReutilizar.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: fiscalValues.regimenFiscal });
+                                facturaReutilizar.setValue({ fieldId: 'custbody_uso_cfdi_fe_imr_33', value: fiscalValues.usoCfdi });
+                                facturaReutilizar.setValue({ fieldId: 'custbody_codigo_postal_fiscal', value: fiscalValues.codigoPostal });
+                                // Método de pago por default (4) si viene vacío
+                                if (!facturaReutilizar.getValue({ fieldId: 'custbody_fe_metodo_de_pago' })) {
+                                    facturaReutilizar.setValue({ fieldId: 'custbody_fe_metodo_de_pago', value: 4 });
+                                }
+                                facturaReutilizar.setValue({ fieldId: 'custbody_fe_metodo_de_pago', value: 4 });
+                                facturaReutilizar.save();
+                            } else {
+                                log.audit('Portal: Transformando OV a Factura', 'OV ID: ' + invoiceOrCustomerId);
+                                var nuevaFactura = record.transform({
+                                    fromType: record.Type.SALES_ORDER,
+                                    fromId: parseInt(invoiceOrCustomerId),
+                                    toType: record.Type.INVOICE,
+                                    isDynamic: true
+                                });
+                                nuevaFactura.setValue({ fieldId: 'custbody_fe_razon_social', value: fiscalValues.razonSocial });
+                                setRFC(nuevaFactura, fiscalValues.rfc);
+                                nuevaFactura.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: fiscalValues.regimenFiscal });
+                                nuevaFactura.setValue({ fieldId: 'custbody_uso_cfdi_fe_imr_33', value: fiscalValues.usoCfdi });
+                                nuevaFactura.setValue({ fieldId: 'custbody_codigo_postal_fiscal', value: fiscalValues.codigoPostal });
+                                // Método de pago por default (4) si viene vacío
+                                if (!nuevaFactura.getValue({ fieldId: 'custbody_fe_metodo_de_pago' })) {
+                                    nuevaFactura.setValue({ fieldId: 'custbody_fe_metodo_de_pago', value: 4 });
+                                }
+                                 nuevaFactura.setValue({ fieldId: 'custbody_fe_metodo_de_pago', value: 4 });
+                                invoiceOrCustomerId = String(nuevaFactura.save());
+                                log.audit('Portal: Factura creada desde OV', 'Nueva Factura ID: ' + invoiceOrCustomerId);
+                            }
                             recordType = 'invoice';
-                            log.audit('Portal: Factura creada desde OV', 'Nueva Factura ID: ' + invoiceOrCustomerId);
                         }
                         var usoCfdi = getUsoCfdi(context.request.parameters.custpage_uso_cfdi);
                         var facturaTimbrar = record.load({ type: record.Type.INVOICE, id: invoiceOrCustomerId, isDynamic: true });
@@ -138,7 +191,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         // Solo actualizar campos fiscales si la factura no fue recién creada desde OV (ya los tiene)
                         if (context.request.parameters.recordType !== 'salesorder') {
                             facturaTimbrar.setValue({ fieldId: 'custbody_fe_razon_social', value: context.request.parameters.custpage_razon_social });
-                            facturaTimbrar.setValue({ fieldId: 'custbody_ce_rfc', value: context.request.parameters.custpage_rfc });
+                            setRFC(facturaTimbrar, context.request.parameters.custpage_rfc);
                             facturaTimbrar.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: context.request.parameters.custpage_regimen_fiscal });
                             facturaTimbrar.setValue({ fieldId: 'custbody_uso_cfdi_fe_imr_33', value: usoCfdi });
                             facturaTimbrar.setValue({ fieldId: 'custbody_codigo_postal_fiscal', value: context.request.parameters.custpage_codigo_postal_fiscal });
@@ -227,7 +280,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                     body: 'Estimado cliente,\n\nAdjuntamos los archivos XML y PDF de su Comprobante Fiscal Digital por Internet (CFDI).\n\nGracias por su preferencia.',
                                     attachments: [xmlFile, pdfFile],
                                     relatedRecords: { // Asocia el correo a la transacción en Netsuite
-                                        transactionId: parseInt(invoiceInternalId)
+                                        transactionId: parseInt(invoiceOrCustomerId)
                                     }
                                 });
                             }
@@ -240,6 +293,18 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         } else {
                             responseData.success = false;
                             responseData.message = 'Error al timbrar: ' + fieldFe.custbody_fe_sf_mensaje_respuesta;
+
+                            // Si la factura fue creada desde una OV y el timbrado falló,
+                            // se elimina para no dejar facturas huérfanas sin timbrar.
+                            if (facturaCreadaDesdeOV) {
+                                try {
+                                    record.delete({ type: record.Type.INVOICE, id: invoiceOrCustomerId });
+                                    log.audit('Portal: Factura eliminada por error de timbrado', 'Factura ID: ' + invoiceOrCustomerId);
+                                    responseData.message += ' (La factura generada desde la OV fue eliminada, puede intentar nuevamente).';
+                                } catch (delErr) {
+                                    log.error('Portal: No se pudo eliminar la factura tras error de timbrado', 'Factura ID: ' + invoiceOrCustomerId + ' - ' + delErr.toString());
+                                }
+                            }
                         }
 
                     }
@@ -289,16 +354,17 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                 : search.createFilter({ name: 'type', operator: search.Operator.ANYOF, values: ['CustInvc'] });
 
             var invoiceSearch;
-            if (searchId && mode !== 'salesorder') {
+            if (searchId) {
                 invoiceSearch = search.load({ id: searchId });
                 invoiceSearch.filters = (invoiceSearch.filters || []).concat([
-                    search.createFilter({ name: folioField || 'tranid', operator: search.Operator.IS, values: folio })
+                    search.createFilter({ name: folioField || 'tranid', operator: search.Operator.IS, values: folio }),
+                    typeFilter
                 ]);
             } else {
                 invoiceSearch = search.create({
                     type: recordTypeNS,
                     filters: [
-                        search.createFilter({ name: 'tranid', operator: search.Operator.IS, values: folio }),
+                        search.createFilter({ name: folioField || 'tranid', operator: search.Operator.IS, values: folio }),
                         typeFilter,
                         search.createFilter({ name: 'mainline', operator: search.Operator.IS, values: 'T' })
                     ],
@@ -400,6 +466,14 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                 return obj[field];
             }
             return '';
+        }
+
+        function setRFC(rec, rfc) {
+            try {
+                rec.setValue({ fieldId: 'custbody_ce_rfc', value: rfc });
+            } catch (e) {
+                rec.setValue({ fieldId: 'custbody_fe_rfc_cfdi_33', value: rfc });
+            }
         }
 
         function getUsoCfdi(usoCfdi) {
