@@ -36,44 +36,38 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchCo
         onSearch(data);
     };
 
-    const inputStyle = {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        color: theme.textPrimary
-    };
+    const inputClass = "w-full px-4 py-3 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow";
+    const ringStyle = { ['--tw-ring-color' as any]: theme.button };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mb-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-                <label htmlFor="invoiceOrCustomerId" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
+                <label htmlFor="invoiceOrCustomerId" className="block text-sm font-medium mb-1.5 text-gray-700">
                     {primaryLabel}
                 </label>
                 <input
                     type="text"
                     id="invoiceOrCustomerId"
                     {...register("invoiceOrCustomerId")}
-                    style={inputStyle}
-                    className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
+                    style={ringStyle}
+                    className={inputClass}
                     placeholder={`Ej: ${primaryLabel.includes('Ticket') ? 'T-12345' : 'INV-00123'}`}
                     disabled={isLoading}
                 />
                 {errors.invoiceOrCustomerId && <p className="text-red-500 text-sm mt-1">{errors.invoiceOrCustomerId.message}</p>}
             </div>
 
-            {/* Renderizado Condicional: Solo mostramos este campo si la configuración lo dice */}
-            {/* Nota: Por ahora el esquema InvoiceSearchSchema solo valida invoiceOrCustomerId. 
-                Si se requiere validar el total, habría que actualizar el esquema. */}
             {showTotal && (
                 <div>
-                    <label htmlFor="invoiceTotal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>
+                    <label htmlFor="invoiceTotal" className="block text-sm font-medium mb-1.5 text-gray-700">
                         Total de la Factura
                     </label>
                     <input
                         type="text"
                         id="invoiceTotal"
                         {...register("invoiceTotal")}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-colors"
+                        style={ringStyle}
+                        className={inputClass}
                         placeholder="Ej: 1250.75"
                         disabled={isLoading}
                     />
@@ -83,8 +77,8 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchCo
             <button
                 type="submit"
                 disabled={isLoading}
-                style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }}
-                className="w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                style={{ backgroundColor: isLoading ? '#94a3b8' : theme.button, color: theme.buttonText }}
+                className="w-full font-semibold py-3 px-4 rounded-lg shadow-sm transition-all duration-300 hover:opacity-90 flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             >
                 <svg className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     {!isLoading && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>}
@@ -95,4 +89,3 @@ export default function InvoiceSearchForm({ onSearch, isLoading, theme, searchCo
         </form>
     );
 }
-

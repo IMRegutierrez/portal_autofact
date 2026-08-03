@@ -16,10 +16,11 @@ interface FiscalDataFormProps {
     onSubmit: (data: FiscalDataInputs) => void;
     isLoading: boolean;
     theme: Theme;
+    onBack?: () => void;
 }
 
-export default function FiscalDataForm({ invoiceNumberForContext, initialData, onSubmit, isLoading, theme }: FiscalDataFormProps) {
-    const { register, handleSubmit, formState: { errors, isValid }, trigger, setValue } = useForm<FiscalDataInputs>({
+export default function FiscalDataForm({ invoiceNumberForContext, initialData, onSubmit, isLoading, theme, onBack }: FiscalDataFormProps) {
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm<FiscalDataInputs>({
         resolver: zodResolver(FiscalDataSchema),
         defaultValues: {
             ...initialData,
@@ -51,174 +52,120 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
         }
     };
 
-    const inputStyle = {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        color: theme.textPrimary
-    };
+    const inputClass = "w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow disabled:bg-gray-100";
+    const ringStyle = { ['--tw-ring-color' as any]: theme.button };
+    const labelClass = "block text-sm font-medium mb-1.5 text-gray-700";
+    const errClass = "text-red-500 text-xs font-semibold mt-1";
 
     return (
-        <div className="mt-8 p-6 bg-white/50 rounded-lg shadow-inner">
-            <h3 className="text-xl font-semibold mb-4" style={{ color: theme.textPrimary }}>
-                Datos Fiscales para CFDI
-            </h3>
-            <p className="mb-6" style={{ color: theme.textSecondary }}>
-                Folio: {invoiceNumberForContext}
+        <div className="animate-step-in">
+            <p className="mb-5 text-sm text-gray-500">
+                Completa la información fiscal para el folio <span className="font-semibold text-gray-700">{invoiceNumberForContext}</span>.
             </p>
 
-            <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
-                <div>
-                    <label htmlFor="razonSocial" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Razón Social</label>
-                    <input
-                        type="text"
-                        id="razonSocial"
-                        {...register('razonSocial')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg"
-                        placeholder="Nombre completo"
-                        disabled={isLoading}
-                    />
-                    {errors.razonSocial && <p className="text-red-500 text-xs font-semibold mt-1">{errors.razonSocial.message}</p>}
+            <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                        <label htmlFor="razonSocial" className={labelClass}>Razón Social</label>
+                        <input type="text" id="razonSocial" {...register('razonSocial')} style={ringStyle} className={inputClass} placeholder="Nombre completo o razón social" disabled={isLoading} />
+                        {errors.razonSocial && <p className={errClass}>{errors.razonSocial.message}</p>}
+                    </div>
+
+                    <div>
+                        <label htmlFor="rfc" className={labelClass}>RFC</label>
+                        <input
+                            type="text" id="rfc" {...register('rfc')} style={ringStyle}
+                            className={`${inputClass} uppercase`} placeholder="Ej: XAXX010101000" disabled={isLoading} maxLength={13}
+                            onChange={(e) => { e.target.value = e.target.value.toUpperCase(); register('rfc').onChange(e); }}
+                        />
+                        {errors.rfc && <p className={errClass}>{errors.rfc.message}</p>}
+                    </div>
+
+                    <div>
+                        <label htmlFor="emailCfdi" className={labelClass}>Email para envío de CFDI</label>
+                        <input type="email" id="emailCfdi" {...register('emailCfdi')} style={ringStyle} className={inputClass} placeholder="correo@ejemplo.com" disabled={isLoading} />
+                        {errors.emailCfdi && <p className={errClass}>{errors.emailCfdi.message}</p>}
+                    </div>
+
+                    <div>
+                        <label htmlFor="telefono" className={labelClass}>Teléfono <span className="text-gray-400 font-normal">(opcional)</span></label>
+                        <input type="tel" id="telefono" {...register('telefono')} style={ringStyle} className={inputClass} placeholder="10 dígitos" disabled={isLoading} maxLength={10} />
+                        {errors.telefono && <p className={errClass}>{errors.telefono.message}</p>}
+                    </div>
+
+                    <div>
+                        <label htmlFor="codigoPostalFiscal" className={labelClass}>Código Postal</label>
+                        <input type="text" id="codigoPostalFiscal" {...register('codigoPostalFiscal')} style={ringStyle} className={inputClass} placeholder="Ej: 06600" disabled={isLoading} maxLength={5} />
+                        {errors.codigoPostalFiscal && <p className={errClass}>{errors.codigoPostalFiscal.message}</p>}
+                    </div>
+
+                    <div className="sm:col-span-2">
+                        <label htmlFor="domicilioFiscal" className={labelClass}>Domicilio Fiscal Receptor</label>
+                        <input type="text" id="domicilioFiscal" {...register('domicilioFiscal')} style={ringStyle} className={inputClass} placeholder="Calle, Número, Colonia" disabled={isLoading} />
+                        {errors.domicilioFiscal && <p className={errClass}>{errors.domicilioFiscal.message}</p>}
+                    </div>
+
+                    <div>
+                        <label htmlFor="regimenFiscal" className={labelClass}>Régimen Fiscal</label>
+                        <select id="regimenFiscal" {...register('regimenFiscal')} style={ringStyle} className={inputClass} disabled={isLoading}>
+                            <option value="">Seleccione un régimen...</option>
+                            <option value="601">601 - General de Ley Personas Morales</option>
+                            <option value="603">603 - Personas Morales con Fines no Lucrativos</option>
+                            <option value="605">605 - Sueldos y Salarios e Ingresos Asimilados</option>
+                            <option value="606">606 - Arrendamiento</option>
+                            <option value="612">612 - Personas Físicas con Act. Empresariales y Profesionales</option>
+                            <option value="616">616 - Sin obligaciones fiscales</option>
+                            <option value="621">621 - Incorporación Fiscal</option>
+                            <option value="626">626 - Régimen Simplificado de Confianza</option>
+                        </select>
+                        {errors.regimenFiscal && <p className={errClass}>{errors.regimenFiscal.message}</p>}
+                    </div>
+
+                    <div>
+                        <label htmlFor="usoCfdi" className={labelClass}>Uso de CFDI</label>
+                        <select id="usoCfdi" {...register('usoCfdi')} style={ringStyle} className={inputClass} disabled={isLoading}>
+                            <option value="">Seleccione un uso...</option>
+                            <option value="S01">S01 - Sin efectos fiscales</option>
+                            <option value="G01">G01 - Adquisición de mercancías</option>
+                            <option value="G03">G03 - Gastos en general</option>
+                            <option value="I01">I01 - Construcciones</option>
+                            <option value="I08">I08 - Otra maquinaria y equipo</option>
+                            <option value="P01">P01 - Por definir</option>
+                        </select>
+                        {errors.usoCfdi && <p className={errClass}>{errors.usoCfdi.message}</p>}
+                    </div>
                 </div>
-                <div>
-                    <label htmlFor="rfc" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>RFC</label>
-                    <input
-                        type="text"
-                        id="rfc"
-                        {...register('rfc')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg uppercase"
-                        placeholder="Ej: XAXX010101000"
+
+                <div className="flex items-center justify-between gap-3 pt-4">
+                    {onBack ? (
+                        <button type="button" onClick={onBack} disabled={isLoading} className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors disabled:opacity-50">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                            Atrás
+                        </button>
+                    ) : <span />}
+
+                    <button
+                        type="submit"
                         disabled={isLoading}
-                        maxLength={13}
-                        onChange={(e) => {
-                            e.target.value = e.target.value.toUpperCase();
-                            register('rfc').onChange(e); // Mantener el evento de react-hook-form
-                        }}
-                    />
-                    {errors.rfc && <p className="text-red-500 text-xs font-semibold mt-1">{errors.rfc.message}</p>}
-                </div>
-                <div>
-                    <label htmlFor="emailCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Email para envío de CFDI</label>
-                    <input
-                        type="email"
-                        id="emailCfdi"
-                        {...register('emailCfdi')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg"
-                        placeholder="correo@ejemplo.com"
-                        disabled={isLoading}
-                    />
-                    {errors.emailCfdi && <p className="text-red-500 text-xs font-semibold mt-1">{errors.emailCfdi.message}</p>}
-                </div>
-                <div>
-                    <label htmlFor="telefono" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Número Telefónico</label>
-                    <input
-                        type="tel"
-                        id="telefono"
-                        {...register('telefono')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg"
-                        placeholder="10 dígitos (opcional)"
-                        disabled={isLoading}
-                        maxLength={10}
-                    />
-                    {errors.telefono && <p className="text-red-500 text-xs font-semibold mt-1">{errors.telefono.message}</p>}
-                </div>
-                <div>
-                    <label htmlFor="domicilioFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Domicilio Fiscal Receptor</label>
-                    <input
-                        type="text"
-                        id="domicilioFiscal"
-                        {...register('domicilioFiscal')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg"
-                        placeholder="Calle, Número, Colonia"
-                        disabled={isLoading}
-                    />
-                    {errors.domicilioFiscal && <p className="text-red-500 text-xs font-semibold mt-1">{errors.domicilioFiscal.message}</p>}
-                </div>
-                <div>
-                    <label htmlFor="codigoPostalFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Código Postal (Receptor)</label>
-                    <input
-                        type="text"
-                        id="codigoPostalFiscal"
-                        {...register('codigoPostalFiscal')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg"
-                        placeholder="Ej: 06600"
-                        disabled={isLoading}
-                    />
-                    {errors.codigoPostalFiscal && <p className="text-red-500 text-xs font-semibold mt-1">{errors.codigoPostalFiscal.message}</p>}
-                </div>
-                <div>
-                    <label htmlFor="regimenFiscal" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Régimen Fiscal Receptor</label>
-                    <select
-                        id="regimenFiscal"
-                        {...register('regimenFiscal')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg"
-                        disabled={isLoading}
+                        style={{ backgroundColor: isLoading ? '#94a3b8' : theme.button, color: theme.buttonText }}
+                        className="inline-flex items-center gap-2 font-semibold py-3 px-7 rounded-lg shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed"
                     >
-                        <option value="">Seleccione un régimen...</option>
-                        <option value="601">General de Ley Personas Morales</option>
-                        <option value="603">Personas Morales con Fines no Lucrativos</option>
-                        <option value="605">Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
-                        <option value="606">Arrendamiento</option>
-                        <option value="612">Personas Físicas con Actividades Empresariales y Profesionales</option>
-                        <option value="616">Sin obligaciones fiscales</option>
-                        <option value="621">Incorporación Fiscal</option>
-                        <option value="626">Régimen Simplificado de Confianza</option>
-                    </select>
-                    {errors.regimenFiscal && <p className="text-red-500 text-xs font-semibold mt-1">{errors.regimenFiscal.message}</p>}
+                        {isLoading ? 'Procesando...' : 'Generar CFDI'}
+                        {!isLoading && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>}
+                    </button>
                 </div>
-                <div>
-                    <label htmlFor="usoCfdi" className="block text-sm font-medium mb-1" style={{ color: theme.textSecondary }}>Uso de CFDI</label>
-                    <select
-                        id="usoCfdi"
-                        {...register('usoCfdi')}
-                        style={inputStyle}
-                        className="w-full px-4 py-3 rounded-lg"
-                        disabled={isLoading}
-                    >
-                        <option value="">Seleccione un uso...</option>
-                        <option value="S01">Sin efectos fiscales</option>
-                        <option value="G01">Adquisición de mercancías</option>
-                        <option value="G03">Gastos en general</option>
-                        <option value="I01">Construcciones</option>
-                        <option value="I08">Otra maquinaria y equipo</option>
-                        <option value="P01">Por definir</option>
-                    </select>
-                    {errors.usoCfdi && <p className="text-red-500 text-xs font-semibold mt-1">{errors.usoCfdi.message}</p>}
-                </div>
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    style={{ backgroundColor: isLoading ? '#64748B' : theme.button, color: theme.buttonText }}
-                    className="w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
-                >
-                    {isLoading ? 'Procesando...' : 'Generar CFDI'}
-                </button>
             </form>
 
             {showConfirmModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-                    <div className="bg-white p-8 rounded-lg shadow-2xl text-center max-w-sm w-full mx-4">
-                        <h4 className="text-xl font-bold text-gray-800 mb-4">Confirmar Datos</h4>
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white p-8 rounded-xl shadow-2xl text-center max-w-sm w-full animate-fade-in">
+                        <h4 className="text-xl font-bold text-gray-800 mb-3">Confirmar datos</h4>
                         <p className="text-gray-600 mb-6">¿Estás seguro de que los datos fiscales ingresados son correctos?</p>
-                        <div className="flex justify-center gap-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmModal(false)}
-                                className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold transition-colors"
-                            >
+                        <div className="flex justify-center gap-3">
+                            <button type="button" onClick={() => setShowConfirmModal(false)} className="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold transition-colors">
                                 Cancelar
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleFinalSubmit}
-                                className="px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors"
-                            >
+                            <button type="button" onClick={handleFinalSubmit} style={{ backgroundColor: theme.button, color: theme.buttonText }} className="px-6 py-2 rounded-lg font-semibold transition-opacity hover:opacity-90">
                                 Confirmar
                             </button>
                         </div>
@@ -228,4 +175,3 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
         </div>
     );
 }
-

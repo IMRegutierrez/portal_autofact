@@ -6,6 +6,7 @@ import InvoiceDetailsDisplay from './components/InvoiceDetailsDisplay';
 import FiscalDataForm from './components/FiscalDataForm';
 import Modal from './components/Modal';
 import Loader from './components/Loader';
+import Stepper, { Step } from './components/Stepper';
 import { useInvoice } from '../hooks/useInvoice';
 import { useFiscalForm } from '../hooks/useFiscalForm';
 import { InvoiceSearchInputs, FiscalDataInputs } from '../lib/schemas';
@@ -38,9 +39,14 @@ interface ClientConfig {
     };
 }
 
+const WIZARD_STEPS: Step[] = [
+    { title: 'Datos del folio', subtitle: 'Busca tu comprobante' },
+    { title: 'Datos fiscales', subtitle: 'Información para tu CFDI' },
+    { title: 'Generar CFDI', subtitle: 'Descarga tu factura' },
+];
+
 // --- Componente Principal del Cliente ---
 export default function PortalClientComponent({ config }: { config: ClientConfig }) {
-    // Hooks personalizados
     const {
         invoiceData,
         isLoading: isSearching,
@@ -68,9 +74,8 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         suiteletUrl: config.suiteletUrl
     });
 
-    // Estado local para UI
-    const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
-    const [showFiscalForm, setShowFiscalForm] = useState(false);
+    // Paso actual del wizard (1..3)
+    const [currentStep, setCurrentStep] = useState(1);
 
     // Estado para el modal
     const [modalMessage, setModalMessage] = useState('');
@@ -78,52 +83,15 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
     const [showReportButton, setShowReportButton] = useState(false);
     const [isReporting, setIsReporting] = useState(false);
 
-    // Estado para datos fiscales recolectados (para reporte)
+    // Datos fiscales recolectados (para reporte)
     const [collectedFiscalData, setCollectedFiscalData] = useState<FiscalDataInputs | null>(null);
 
-    // Efectos para manejar estados derivados de los hooks
-    useEffect(() => {
-        if (searchError) {
-            displayModal(searchError);
-        }
-    }, [searchError]);
-
-    useEffect(() => {
-        if (stampError) {
-            displayModal(stampError, true); // Permitir reporte si falla timbrado
-        }
-    }, [stampError]);
-
-    useEffect(() => {
-        if (stampSuccess) {
-            displayModal(stampSuccess);
-            setShowFiscalForm(false);
-            setShowInvoiceDetails(false);
-        }
-    }, [stampSuccess]);
-
-    useEffect(() => {
-        if (invoiceData) {
-            if (invoiceData.isStamped) {
-                // Si la factura ya está timbrada (detectado por useInvoice al buscar)
-                displayModal('Este folio ya ha sido timbrado anteriormente.');
-            } else {
-                setShowInvoiceDetails(true);
-            }
-        }
-    }, [invoiceData]);
-
-    // Combinar links de CFDI (de búsqueda o de timbrado reciente)
-    const activeCfdiLinks = stampedFiles.xmlUrl ? stampedFiles : searchCfdiLinks;
-
-    const logoSizeClass = config.logoHeight || 'h-64';
-
     const theme = {
-        background: config.backgroundColor || '#FFFFFF',
-        cardBackground: config.cardBackgroundColor || '#78BE20',
+        background: config.backgroundColor || '#F1F5F9',
+        cardBackground: config.cardBackgroundColor || '#FFFFFF',
         textPrimary: config.primaryTextColor || '#1E293B',
         textSecondary: config.secondaryTextColor || '#334155',
-        button: config.buttonColor || '#0284C7',
+        button: config.buttonColor || '#2563EB',
         buttonText: config.buttonTextColor || '#FFFFFF'
     };
 
@@ -133,22 +101,51 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         setShowModal(true);
     };
 
-    const handleSearchSubmit = (data: InvoiceSearchInputs) => {
-        setShowInvoiceDetails(false);
-        setShowFiscalForm(false);
-        resetInvoice(); // Limpiar estado anterior
-        searchInvoice(data);
-    };
+    // --- Efectos derivados de los hooks ---
+    useEffect(() => {
+        if (searchError) displayModal(searchError);
+    }, [searchError]);
 
-    const handleConfirmInvoiceDetails = () => {
-        setShowFiscalForm(true);
-        displayModal("Detalles confirmados. Procede con los datos fiscales.");
+    useEffect(() => {
+        if (stampError) displayModal(stampError, true);
+    }, [stampError]);
+
+    useEffect(() => {
+        // Timbrado exitoso -> avanzar al paso final
+        if (stampSuccess) setCurrentStep(3);
+    }, [stampSuccess]);
+
+    useEffect(() => {
+        // Si al buscar el folio ya estaba timbrado, avisamos (los enlaces se muestran en el paso 1)
+        if (invoiceData && invoiceData.isStamped) {
+            displayModal('Este folio ya ha sido timbrado anteriormente.');
+        }
+    }, [invoiceData]);
+
+    // Enlaces activos (timbrado reciente o búsqueda)
+    const activeCfdiLinks = stampedFiles.xmlUrl ? stampedFiles : searchCfdiLinks;
+    const isLoading = isSearching || isStamping;
+    const canAdvanceFromSearch = !!invoiceData && !invoiceData.isStamped;
+
+    // --- Handlers ---
+    const handleSearchSubmit = (data: InvoiceSearchInputs) => {
+        resetInvoice();
+        setSearchError(null);
+        searchInvoice(data);
     };
 
     const handleFiscalDataSubmit = async (fiscalData: FiscalDataInputs) => {
         if (!invoiceData) return;
         setCollectedFiscalData(fiscalData);
         await stampInvoice(fiscalData, invoiceData);
+    };
+
+    const handleRestart = () => {
+        resetInvoice();
+        setSearchError(null);
+        setStampError(null);
+        setCollectedFiscalData(null);
+        setCurrentStep(1);
     };
 
     const handleReportProblem = async () => {
@@ -161,18 +158,13 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
             return;
         }
         setIsReporting(true);
-
         const reportData = {
-            invoiceData: invoiceData,
+            invoiceData,
             fiscalData: collectedFiscalData,
             errorMessage: modalMessage,
             clientEmail: collectedFiscalData.emailCfdi,
-            systemContext: {
-                senderEmployeeId: config.senderId,
-                supportEmailTarget: config.supportEmail
-            }
+            systemContext: { senderEmployeeId: config.senderId, supportEmailTarget: config.supportEmail }
         };
-
         try {
             const response = await fetch(config.reportSuiteletUrl, {
                 method: 'POST',
@@ -193,81 +185,133 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         }
     };
 
-    const isLoading = isSearching || isStamping;
+    // --- Panel de descarga (reutilizable) ---
+    const DownloadButtons = () => (
+        <div className="flex flex-col sm:flex-row justify-center gap-3">
+            {activeCfdiLinks.xmlUrl && (
+                <a href={activeCfdiLinks.xmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-lg text-white bg-sky-600 hover:bg-sky-700 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Descargar XML
+                </a>
+            )}
+            {activeCfdiLinks.pdfUrl && (
+                <a href={activeCfdiLinks.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Descargar PDF
+                </a>
+            )}
+        </div>
+    );
+
+    // Altura del logo configurable por cliente (config.logoHeight, ej. "h-16", "h-24"); default modesto si no viene.
+    const logoSizeClass = config.logoHeight || 'h-16';
 
     return (
-        <div style={{ backgroundColor: theme.background, color: theme.textPrimary }} className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div style={{ backgroundColor: theme.background }} className="min-h-screen flex flex-col items-center justify-center p-4">
             <Head>
                 <title>{config.clientName || 'Portal de Autofacturación'}</title>
             </Head>
-            <div style={{ backgroundColor: theme.cardBackground }} className="w-full max-w-2xl shadow-2xl rounded-xl p-6 md:p-10">
-                <header className="text-center mb-8">
+
+            <div style={{ backgroundColor: theme.cardBackground }} className="w-full max-w-3xl rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                {/* Encabezado */}
+                <div className="px-6 md:px-10 pt-8 pb-4 text-center">
                     {config.logoUrl ? (
-                        <img
-                            src={config.logoUrl}
-                            alt={`Logo de ${config.clientName}`}
-                            className={`${logoSizeClass} w-auto mx-auto object-contain`}
-                        />
+                        <img src={config.logoUrl} alt={`Logo de ${config.clientName}`} className={`${logoSizeClass} w-auto mx-auto object-contain`} />
                     ) : (
-                        <svg
-                            style={{ color: theme.textPrimary }}
-                            className={`${logoSizeClass} w-auto mx-auto`}
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <svg style={{ color: theme.button }} className="h-12 w-auto mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     )}
-                    <h1 style={{ color: theme.textPrimary }} className="text-3xl font-bold pt-4">{config.clientName || 'Portal de Autofacturación'}</h1>
-                    <p style={{ color: theme.textSecondary }} className="mt-2">Consulta folios y genera tu CFDI.</p>
-                </header>
+                    <h1 className="text-2xl font-bold pt-3 text-gray-900">{config.clientName || 'Portal de Autofacturación'}</h1>
+                    <p className="mt-1 text-sm text-gray-500">Consulta tu folio y genera tu CFDI en 3 pasos.</p>
+                </div>
 
-                <InvoiceSearchForm
-                    onSearch={handleSearchSubmit}
-                    isLoading={isLoading}
-                    theme={theme}
-                    searchConfig={config.searchFieldsConfig}
-                />
+                {/* Stepper */}
+                <div className="px-6 md:px-12 pb-5">
+                    <Stepper steps={WIZARD_STEPS} current={currentStep} accent={theme.button} />
+                </div>
 
-                {isLoading && <Loader />}
+                <div className="border-t border-gray-100" />
 
-                {showInvoiceDetails && invoiceData && (
-                    <InvoiceDetailsDisplay
-                        invoiceData={invoiceData}
-                        onConfirmDetails={handleConfirmInvoiceDetails}
-                        theme={theme}
-                    />
-                )}
+                {/* Contenido del paso */}
+                <div key={currentStep} className="px-6 md:px-10 py-8 animate-step-in">
+                    {/* PASO 1: Búsqueda */}
+                    {currentStep === 1 && (
+                        <div>
+                            <InvoiceSearchForm
+                                onSearch={handleSearchSubmit}
+                                isLoading={isLoading}
+                                theme={theme}
+                                searchConfig={config.searchFieldsConfig as any}
+                            />
 
-                {showFiscalForm && invoiceData && (
-                    <FiscalDataForm
-                        invoiceNumberForContext={invoiceData.invoiceNumber}
-                        initialData={invoiceData as Partial<FiscalDataInputs>}
-                        onSubmit={handleFiscalDataSubmit}
-                        isLoading={isLoading}
-                        theme={theme}
-                    />
-                )}
+                            {isLoading && <Loader />}
 
-                {(activeCfdiLinks.xmlUrl || activeCfdiLinks.pdfUrl) && !isLoading && (
-                    <div className="mt-8 p-6 bg-white/50 rounded-lg shadow-inner text-center">
-                        <h3 style={{ color: theme.textPrimary }} className="text-xl font-semibold mb-4">CFDI Generado Exitosamente</h3>
-                        <p style={{ color: theme.textSecondary }} className="mb-6">Descarga los archivos de tu factura.</p>
-                        <div className="flex flex-col sm:flex-row justify-center gap-4">
-                            {activeCfdiLinks.xmlUrl && <a href={activeCfdiLinks.xmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 transition-colors">Descargar XML</a>}
-                            {activeCfdiLinks.pdfUrl && <a href={activeCfdiLinks.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">Descargar PDF</a>}
+                            {invoiceData && invoiceData.isStamped && (activeCfdiLinks.xmlUrl || activeCfdiLinks.pdfUrl) && (
+                                <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-center animate-fade-in">
+                                    <p className="text-sm font-medium text-amber-800 mb-4">Este folio ya cuenta con un CFDI timbrado. Puedes descargarlo:</p>
+                                    <DownloadButtons />
+                                </div>
+                            )}
+
+                            {canAdvanceFromSearch && (
+                                <InvoiceDetailsDisplay invoiceData={invoiceData as any} onConfirmDetails={() => { }} theme={theme} hideConfirmButton />
+                            )}
+
+                            {/* Navegación */}
+                            <div className="flex justify-end pt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentStep(2)}
+                                    disabled={!canAdvanceFromSearch}
+                                    style={canAdvanceFromSearch ? { backgroundColor: theme.button, color: theme.buttonText } : undefined}
+                                    className={`inline-flex items-center gap-2 font-semibold py-3 px-7 rounded-lg shadow-sm transition-all ${canAdvanceFromSearch ? 'hover:opacity-90' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                                >
+                                    Siguiente
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {/* PASO 2: Datos fiscales */}
+                    {currentStep === 2 && invoiceData && (
+                        <FiscalDataForm
+                            invoiceNumberForContext={invoiceData.invoiceNumber}
+                            initialData={invoiceData as Partial<FiscalDataInputs>}
+                            onSubmit={handleFiscalDataSubmit}
+                            isLoading={isLoading}
+                            theme={theme}
+                            onBack={() => setCurrentStep(1)}
+                        />
+                    )}
+
+                    {/* PASO 3: Generación / descarga de CFDI */}
+                    {currentStep === 3 && (
+                        <div className="text-center animate-fade-in">
+                            <div className="mx-auto mb-4 flex items-center justify-center w-16 h-16 rounded-full bg-green-100">
+                                <svg className="w-9 h-9 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-1">¡CFDI generado exitosamente!</h3>
+                            <p className="text-sm text-gray-500 mb-6">Descarga los archivos de tu factura. También se enviaron a tu correo.</p>
+                            <DownloadButtons />
+                            <div className="pt-8">
+                                <button type="button" onClick={handleRestart} className="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">
+                                    Facturar otro folio
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {config.whatsappNumber && (
-                <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+                <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
                     <div className="bg-white text-gray-800 px-4 py-2 rounded-lg shadow-lg mb-1 relative border border-gray-100 max-w-[200px] text-center text-sm font-medium animate-bounce-slow">
                         ¿Tienes alguna duda sobre tu folio/factura?
                         <div className="absolute w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 bottom-[-6px] right-6"></div>
                     </div>
-
                     <a
                         href={`https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent("Hola, necesito ayuda con mi facturación.")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        target="_blank" rel="noopener noreferrer"
                         className="bg-[#25D366] hover:bg-[#20bd5a] text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110 flex items-center justify-center"
                         title="Ayuda por WhatsApp"
                     >
@@ -286,10 +330,9 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 onReportProblem={handleReportProblem}
                 isReporting={isReporting}
             />
-            <footer className="text-center mt-12 pb-6">
-                <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} {'IMR Software'} Todos los derechos reservados.</p>
+            <footer className="text-center mt-8 pb-6">
+                <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} IMR Software. Todos los derechos reservados.</p>
             </footer>
         </div>
     );
 }
-

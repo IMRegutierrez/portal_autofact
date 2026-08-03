@@ -23,7 +23,9 @@ interface AwsConfig {
 
 // La página ahora es un único componente de servidor asíncrono.
 export default async function Page(props: any) {
-    const clientId = props.searchParams?.clientId;
+    // En Next.js 15, searchParams es una Promise y debe ser esperada antes de acceder a sus propiedades.
+    const searchParams = await props.searchParams;
+    const clientId = searchParams?.clientId;
 
     // Se obtiene la configuración desde serverRuntimeConfig en next.config.js
     const { serverRuntimeConfig } = getConfig();

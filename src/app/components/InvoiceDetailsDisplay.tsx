@@ -25,9 +25,10 @@ interface InvoiceDetailsDisplayProps {
     invoiceData: InvoiceData;
     onConfirmDetails: () => void;
     theme: Theme;
+    hideConfirmButton?: boolean; // El wizard controla la navegación
 }
 
-export default function InvoiceDetailsDisplay({ invoiceData, onConfirmDetails, theme }: InvoiceDetailsDisplayProps) {
+export default function InvoiceDetailsDisplay({ invoiceData, onConfirmDetails, theme, hideConfirmButton }: InvoiceDetailsDisplayProps) {
     const [confirmed, setConfirmed] = useState(false);
 
     const handleConfirm = () => {
@@ -37,37 +38,53 @@ export default function InvoiceDetailsDisplay({ invoiceData, onConfirmDetails, t
 
     if (!invoiceData) return null;
 
+    const Row = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
+        <div className="flex justify-between items-center gap-4 py-1.5">
+            <span className="text-sm text-gray-500">{label}</span>
+            <span className={`text-sm text-right ${strong ? 'font-bold text-base' : 'font-medium text-gray-800'}`} style={strong ? { color: theme.button } : undefined}>
+                {value}
+            </span>
+        </div>
+    );
+
     return (
-        <div className="mt-8 p-6 bg-white/50 rounded-lg shadow-inner">
-            <h2 className="text-2xl font-semibold mb-4" style={{ color: theme.textPrimary }}>
-                Detalles del folio
-            </h2>
-            <div className="space-y-3" style={{ color: theme.textSecondary }}>
-                <p><strong>Número de folio:</strong> <span>{invoiceData.invoiceNumber}</span></p>
-                <p><strong>Cliente:</strong> <span>{invoiceData.customerName}</span></p>
-                <p><strong>Fecha de emisión:</strong> <span>{invoiceData.issueDate}</span></p>
-                <p><strong>Fecha de vencimiento:</strong> <span>{invoiceData.dueDate}</span></p>
-                <p className="text-xl"><strong>Monto total:</strong> <span className="font-bold text-sky-800">{invoiceData.totalAmount}</span></p>
+        <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-5 animate-fade-in">
+            <div className="flex items-center gap-2 mb-3">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full" style={{ backgroundColor: `${theme.button}1a` }}>
+                    <svg className="w-3.5 h-3.5" style={{ color: theme.button }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </span>
+                <h2 className="text-lg font-semibold text-gray-800">Folio encontrado</h2>
             </div>
+
+            <div className="divide-y divide-gray-200">
+                <Row label="Número de folio" value={invoiceData.invoiceNumber} />
+                <Row label="Cliente" value={invoiceData.customerName} />
+                <Row label="Fecha de emisión" value={invoiceData.issueDate} />
+                <Row label="Fecha de vencimiento" value={invoiceData.dueDate} />
+                <Row label="Monto total" value={invoiceData.totalAmount} strong />
+            </div>
+
             {invoiceData.lineItems && invoiceData.lineItems.length > 0 && (
-                <div className="mt-6 border-t border-gray-400 pt-4">
-                    <h3 className="text-lg font-medium mb-2" style={{ color: theme.textPrimary }}>
-                        Conceptos:
-                    </h3>
-                    <ul className="list-disc list-inside space-y-1 text-sm pl-2" style={{ color: theme.textSecondary }}>
+                <div className="mt-4 border-t border-gray-200 pt-3">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Conceptos</h3>
+                    <ul className="space-y-1.5">
                         {invoiceData.lineItems.map((item, index) => (
-                            <li key={index}>
-                                {item.description} (Cant: {item.quantity}, P.U.: {item.unitPrice}, Total: {item.total})
+                            <li key={index} className="text-xs text-gray-600 flex justify-between gap-3">
+                                <span className="truncate">{item.description}</span>
+                                <span className="whitespace-nowrap text-gray-400">Cant: {item.quantity} · {item.total}</span>
                             </li>
                         ))}
                     </ul>
                 </div>
             )}
-            {!confirmed && (
-                 <button 
+
+            {!hideConfirmButton && !confirmed && (
+                <button
                     onClick={handleConfirm}
                     style={{ backgroundColor: theme.button, color: theme.buttonText }}
-                    className="mt-8 w-full font-semibold py-3 px-4 rounded-lg shadow-md transition-opacity hover:opacity-90"
+                    className="mt-6 w-full font-semibold py-3 px-4 rounded-lg shadow-sm transition-opacity hover:opacity-90"
                 >
                     Confirmar detalles del folio
                 </button>
