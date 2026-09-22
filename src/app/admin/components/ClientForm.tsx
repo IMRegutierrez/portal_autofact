@@ -362,7 +362,9 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             >
                                 <option value="invoice">Factura (default)</option>
                                 <option value="salesorder">Orden de Venta</option>
-                                <option value="both">Ambos (Factura → OV)</option>
+                                <option value="cashsale">Venta al Contado (Cash Sale)</option>
+                                <option value="both">Factura y OV</option>
+                                <option value="all">Todos (Factura, OV y Cash Sale)</option>
                             </select>
                         </div>
                         <p className="mt-1 text-xs text-gray-500">Define qué tipo de registro busca el portal al ingresar un folio.</p>

@@ -28,7 +28,7 @@ interface UseInvoiceProps {
     suiteletUrl: string;
     clientId: string;
     searchId?: string;
-    searchMode?: 'invoice' | 'salesorder' | 'both';
+    searchMode?: 'invoice' | 'salesorder' | 'cashsale' | 'both' | 'all';
     searchField?: string;
 }
 
@@ -40,7 +40,13 @@ export function useInvoice({ suiteletUrl, clientId, searchId, searchMode, search
 
     const formatCurrency = (amount: string | number) => {
         const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-        if (isNaN(value)) return amount;
+        if (isNaN(value)) {
+            return new Intl.NumberFormat('es-MX', {
+                style: 'currency',
+                currency: 'MXN',
+                minimumFractionDigits: 2
+            }).format(0);
+        }
         return new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN',
