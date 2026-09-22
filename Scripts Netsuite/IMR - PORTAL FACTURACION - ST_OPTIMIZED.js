@@ -1,5 +1,5 @@
 /**
- * @NApiVersion 2.x
+ * @NApiVersion 2.1
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
@@ -85,6 +85,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                         'total',
                                         'custbody_fe_razon_social',
                                         'custbody_ce_rfc',
+                                        'custbody_fe_rfc_cfdi_33',
                                         'custbodyimr_regimenfiscalreceptor',
                                         'custbody_uso_cfdi_fe_imr_33',
                                         'custbody_forma_pago_fe_imr_33',
@@ -155,6 +156,17 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                     });
                                 }
 
+                                var totalAmountNum = parseFloat(invoiceRecord.getValue({ fieldId: 'total' }));
+                                if (isNaN(totalAmountNum)) {
+                                    totalAmountNum = parseFloat(result.getValue('total'));
+                                }
+                                if (isNaN(totalAmountNum)) {
+                                    totalAmountNum = lineItems.reduce(function (sum, item) {
+                                        var amt = parseFloat(item.total);
+                                        return sum + (isNaN(amt) ? 0 : amt);
+                                    }, 0);
+                                }
+
                                 responseData.success = true;
                                 responseData.message = 'Factura encontrada.';
                                 responseData.invoiceData = {
@@ -165,9 +177,9 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                     subsidiaryId: result.getValue('subsidiary'),
                                     issueDate: result.getValue('trandate'),
                                     dueDate: result.getValue('duedate'),
-                                    totalAmount: parseFloat(result.getValue('total')).toFixed(2),
+                                    totalAmount: totalAmountNum.toFixed(2),
                                     razonSocial: result.getValue('custbody_fe_razon_social'),
-                                    rfc: result.getValue('custbody_ce_rfc'),
+                                    rfc: result.getValue('custbody_fe_rfc_cfdi_33') || result.getValue('custbody_ce_rfc'),
                                     regimenFiscal: result.getText('custbodyimr_regimenfiscalreceptor'),
                                     usoCfdi: result.getText('custbody_uso_cfdi_fe_imr_33'),
                                     formaPago: result.getText('custbody_forma_pago_fe_imr_33'),
@@ -203,7 +215,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         var facturaTimbrar = record.load({ type: record.Type.INVOICE, id: invoiceOrCustomerId, isDynamic: true });
                         var subsidiaryTransaccion = facturaTimbrar.getValue({ fieldId: "subsidiary" });
                         facturaTimbrar.setValue({ fieldId: 'custbody_fe_razon_social', value: context.request.parameters.custpage_razon_social });
-                        facturaTimbrar.setValue({ fieldId: 'custbody_ce_rfc', value: context.request.parameters.custpage_rfc });
+                        setRFC(facturaTimbrar, context.request.parameters.custpage_rfc);
                         facturaTimbrar.setValue({ fieldId: 'custbodyimr_regimenfiscalreceptor', value: context.request.parameters.custpage_regimen_fiscal });
                         facturaTimbrar.setValue({ fieldId: 'custbody_uso_cfdi_fe_imr_33', value: usoCfdi });
                         facturaTimbrar.setValue({ fieldId: 'custbody_codigo_postal_fiscal', value: context.request.parameters.custpage_codigo_postal_fiscal });
@@ -351,6 +363,14 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                 return obj[field];
             }
             return '';
+        }
+
+        function setRFC(rec, rfc) {
+            try {
+                rec.setValue({ fieldId: 'custbody_fe_rfc_cfdi_33', value: rfc });
+            } catch (e) {
+                rec.setValue({ fieldId: 'custbody_ce_rfc', value: rfc });
+            }
         }
 
         function getUsoCfdi(usoCfdi) {

@@ -1,5 +1,5 @@
 /**
- * @NApiVersion 2.x
+ * @NApiVersion 2.1
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
@@ -82,14 +82,19 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         var foundRecordType = null;
 
                         // Buscar según el modo configurado
-                        if (searchMode === 'invoice' || searchMode === 'both') {
+                        if (searchMode === 'invoice' || searchMode === 'both' || searchMode === 'all') {
                             searchResult = searchByFolio(invoiceOrCustomerId, 'invoice', searchId, searchField, search, record, file, config);
                             if (searchResult) foundRecordType = 'invoice';
                         }
 
-                        if (!searchResult && (searchMode === 'salesorder' || searchMode === 'both')) {
+                        if (!searchResult && (searchMode === 'salesorder' || searchMode === 'both' || searchMode === 'all')) {
                             searchResult = searchByFolio(invoiceOrCustomerId, 'salesorder', searchId, searchField, search, record, file, config);
                             if (searchResult) foundRecordType = 'salesorder';
+                        }
+
+                        if (!searchResult && (searchMode === 'cashsale' || searchMode === 'all')) {
+                            searchResult = searchByFolio(invoiceOrCustomerId, 'cashsale', searchId, searchField, search, record, file, config);
+                            if (searchResult) foundRecordType = 'cashsale';
                         }
 
                         if (searchResult) {
@@ -100,9 +105,17 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                 responseData.invoiceData.recordType = foundRecordType;
                             }
                         } else {
-                            responseData.message = searchMode === 'both'
-                                ? 'No se encontró factura ni orden de venta con ese folio.'
-                                : (searchMode === 'salesorder' ? 'Orden de venta no encontrada.' : 'Factura no encontrada o los datos no coinciden.');
+                            if (searchMode === 'all') {
+                                responseData.message = 'No se encontró factura, orden de venta ni venta al contado con ese folio.';
+                            } else if (searchMode === 'both') {
+                                responseData.message = 'No se encontró factura ni orden de venta con ese folio.';
+                            } else if (searchMode === 'salesorder') {
+                                responseData.message = 'Orden de venta no encontrada.';
+                            } else if (searchMode === 'cashsale') {
+                                responseData.message = 'Venta al contado no encontrada.';
+                            } else {
+                                responseData.message = 'Factura no encontrada o los datos no coinciden.';
+                            }
                         }
                     }
 
@@ -186,7 +199,8 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             recordType = 'invoice';
                         }
                         var usoCfdi = getUsoCfdi(context.request.parameters.custpage_uso_cfdi);
-                        var facturaTimbrar = record.load({ type: record.Type.INVOICE, id: invoiceOrCustomerId, isDynamic: true });
+                        var recordTypeToLoad = recordType === 'cashsale' ? record.Type.CASH_SALE : record.Type.INVOICE;
+                        var facturaTimbrar = record.load({ type: recordTypeToLoad, id: invoiceOrCustomerId, isDynamic: true });
                         var subsidiaryTransaccion = facturaTimbrar.getValue({ fieldId: "subsidiary" });
                         // Solo actualizar campos fiscales si la factura no fue recién creada desde OV (ya los tiene)
                         if (context.request.parameters.recordType !== 'salesorder') {
@@ -335,6 +349,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                 search.createColumn({ name: 'total' }),
                 search.createColumn({ name: 'custbody_fe_razon_social' }),
                 search.createColumn({ name: 'custbody_ce_rfc' }),
+                search.createColumn({ name: 'custbody_fe_rfc_cfdi_33' }),
                 search.createColumn({ name: 'custbodyimr_regimenfiscalreceptor' }),
                 search.createColumn({ name: 'custbody_uso_cfdi_fe_imr_33' }),
                 search.createColumn({ name: 'custbody_forma_pago_fe_imr_33' }),
@@ -347,11 +362,13 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                 search.createColumn({ name: 'custbody_fe_sf_pdf' })
             ];
 
-            var recordTypeNS = mode === 'salesorder' ? search.Type.SALES_ORDER : search.Type.INVOICE;
-            var nsType = mode === 'salesorder' ? 'salesorder' : 'invoice';
+            var recordTypeNS = mode === 'salesorder' ? search.Type.SALES_ORDER : (mode === 'cashsale' ? search.Type.CASH_SALE : search.Type.INVOICE);
+            var nsType = mode === 'salesorder' ? 'salesorder' : (mode === 'cashsale' ? 'cashsale' : 'invoice');
             var typeFilter = mode === 'salesorder'
                 ? search.createFilter({ name: 'type', operator: search.Operator.ANYOF, values: ['SalesOrd'] })
-                : search.createFilter({ name: 'type', operator: search.Operator.ANYOF, values: ['CustInvc'] });
+                : (mode === 'cashsale'
+                    ? search.createFilter({ name: 'type', operator: search.Operator.ANYOF, values: ['CashSale'] })
+                    : search.createFilter({ name: 'type', operator: search.Operator.ANYOF, values: ['CustInvc'] }));
 
             var invoiceSearch;
             if (searchId) {
@@ -377,8 +394,8 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
 
             var result = searchResult[0];
 
-            // Si es factura, verificar si ya está timbrada
-            if (mode !== 'salesorder') {
+            // Si es factura o venta al contado, verificar si ya está timbrada
+            if (mode === 'invoice' || mode === 'cashsale') {
                 var codResp = result.getValue({ name: 'custbody_fe_sf_codigo_respuesta' }) || '';
                 if (codResp == '200.0' || codResp == '200') {
                     var xmlSat = result.getValue({ name: 'custbody_fe_sf_xml_sat' }) || '';
@@ -412,9 +429,20 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
             var razonSocial = customerData.getValue({ fieldId: 'custentity_razon_social' }) || customerData.getValue({ fieldId: 'companyname' });
             var rfc = customerData.getValue({ fieldId: 'custentity_ce_rfc' }) || customerData.getValue({ fieldId: 'vatregnumber' });
 
+            var totalAmountNum = parseFloat(transaccionRecord.getValue({ fieldId: 'total' }));
+            if (isNaN(totalAmountNum)) {
+                totalAmountNum = parseFloat(result.getValue('total'));
+            }
+            if (isNaN(totalAmountNum)) {
+                totalAmountNum = lineItems.reduce(function (sum, item) {
+                    var amt = parseFloat(item.total);
+                    return sum + (isNaN(amt) ? 0 : amt);
+                }, 0);
+            }
+
             return {
                 success: true,
-                message: mode === 'salesorder' ? 'Orden de venta encontrada.' : 'Factura encontrada.',
+                message: mode === 'salesorder' ? 'Orden de venta encontrada.' : (mode === 'cashsale' ? 'Venta al contado encontrada.' : 'Factura encontrada.'),
                 invoiceData: {
                     invoiceNumber: result.getValue('tranid'),
                     internalId: result.id,
@@ -422,9 +450,9 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                     subsidiaryId: result.getValue('subsidiary'),
                     issueDate: result.getValue('trandate'),
                     dueDate: result.getValue('duedate'),
-                    totalAmount: parseFloat(result.getValue('total')).toFixed(2),
+                    totalAmount: totalAmountNum.toFixed(2),
                     razonSocial: mode === 'salesorder' ? razonSocial : result.getValue('custbody_fe_razon_social'),
-                    rfc: mode === 'salesorder' ? rfc : result.getValue('custbody_ce_rfc'),
+                    rfc: mode === 'salesorder' ? rfc : (result.getValue('custbody_fe_rfc_cfdi_33') || result.getValue('custbody_ce_rfc')),
                     regimenFiscal: result.getText('custbodyimr_regimenfiscalreceptor'),
                     usoCfdi: result.getText('custbody_uso_cfdi_fe_imr_33'),
                     formaPago: result.getText('custbody_forma_pago_fe_imr_33'),
@@ -470,9 +498,9 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
 
         function setRFC(rec, rfc) {
             try {
-                rec.setValue({ fieldId: 'custbody_ce_rfc', value: rfc });
-            } catch (e) {
                 rec.setValue({ fieldId: 'custbody_fe_rfc_cfdi_33', value: rfc });
+            } catch (e) {
+                rec.setValue({ fieldId: 'custbody_ce_rfc', value: rfc });
             }
         }
 

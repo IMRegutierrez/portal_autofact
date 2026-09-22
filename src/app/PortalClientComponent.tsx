@@ -27,7 +27,7 @@ interface ClientConfig {
     buttonTextColor?: string;
     searchId?: string;
     reportSuiteletUrl?: string;
-    searchMode?: 'invoice' | 'salesorder' | 'both';
+    searchMode?: 'invoice' | 'salesorder' | 'cashsale' | 'both' | 'all';
     searchField?: string;
     isActive?: boolean;
     whatsappNumber?: string;
