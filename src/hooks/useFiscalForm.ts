@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FiscalDataInputs } from '../lib/schemas';
+import { readJsonResponse } from '../lib/http';
 
 interface UseFiscalFormProps {
     suiteletUrl: string;
@@ -45,11 +46,7 @@ export function useFiscalForm({ suiteletUrl }: UseFiscalFormProps) {
                 body: formData
             });
 
-            if (!response.ok) {
-                throw new Error(`Error del servidor: ${response.status}`);
-            }
-
-            const result = await response.json();
+            const result = await readJsonResponse(response);
 
             if (result.success) {
                 setStampSuccess(result.message || "Proceso de Timbrado completado.");

@@ -10,6 +10,7 @@ import Stepper, { Step } from './components/Stepper';
 import { useInvoice } from '../hooks/useInvoice';
 import { useFiscalForm } from '../hooks/useFiscalForm';
 import { InvoiceSearchInputs, FiscalDataInputs } from '../lib/schemas';
+import { readJsonResponse } from '../lib/http';
 
 // --- Definición de Tipos (Interfaces) ---
 interface ClientConfig {
@@ -171,7 +172,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reportData)
             });
-            const result = await response.json();
+            const result = await readJsonResponse(response);
             if (!response.ok || !result.success) {
                 throw new Error(result.message || "El servidor de reportes devolvió un error.");
             }

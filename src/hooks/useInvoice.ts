@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { InvoiceSearchInputs } from '../lib/schemas';
+import { readJsonResponse } from '../lib/http';
 
 interface InvoiceData {
     internalId: string;
@@ -83,11 +84,7 @@ export function useInvoice({ suiteletUrl, clientId, searchId, searchMode, search
                 body: formData,
             });
 
-            if (!response.ok) {
-                throw new Error(`Error del servidor: ${response.status}`);
-            }
-
-            const result = await response.json();
+            const result = await readJsonResponse(response);
 
             if (result.invoiceData?.isStamped) {
                 setError(result.message || 'Este folio ya ha sido timbrado anteriormente.');
