@@ -285,12 +285,23 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                                 // const emailSubject = mergeResult.subject;
                                 // const emailBody = mergeResult.body;
 
+                                // Nombre de la empresa/subsidiaria emisora, para personalizar el correo (portal multi-cliente).
+                                var nombreEmpresa = '';
+                                try {
+                                    nombreEmpresa = facturaTimbrar.getText({ fieldId: 'subsidiary' }) || '';
+                                    // Si el nombre viene con jerarquía (Padre : Hijo), tomar el último segmento.
+                                    if (nombreEmpresa.indexOf(':') !== -1) {
+                                        var partesNombre = nombreEmpresa.split(':');
+                                        nombreEmpresa = partesNombre[partesNombre.length - 1].trim();
+                                    }
+                                } catch (eNombreEmpresa) {
+                                    nombreEmpresa = '';
+                                }
+
                                 email.send({
                                     author: SENDER_ID,
                                     recipients: customerEmail,
-                                    // subject: emailSubject || `Su Factura Electrónica ${invoiceInternalId}`,
-                                    // body: emailBody || `Estimado cliente, adjuntamos los archivos de su factura.`,
-                                    subject: 'Su Factura Electrónica de Grupo Premier',
+                                    subject: nombreEmpresa ? ('Su Factura Electrónica de ' + nombreEmpresa) : 'Su Factura Electrónica',
                                     body: 'Estimado cliente,\n\nAdjuntamos los archivos XML y PDF de su Comprobante Fiscal Digital por Internet (CFDI).\n\nGracias por su preferencia.',
                                     attachments: [xmlFile, pdfFile],
                                     relatedRecords: { // Asocia el correo a la transacción en Netsuite
