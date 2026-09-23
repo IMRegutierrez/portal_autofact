@@ -450,12 +450,17 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                     issueDate: result.getValue('trandate'),
                     dueDate: result.getValue('duedate'),
                     totalAmount: totalAmountNum.toFixed(2),
-                    razonSocial: mode === 'salesorder' ? razonSocial : result.getValue('custbody_fe_razon_social'),
-                    rfc: mode === 'salesorder' ? rfc : result.getValue('custbody_ce_rfc'),
-                    regimenFiscal: result.getText('custbodyimr_regimenfiscalreceptor'),
-                    usoCfdi: result.getText('custbody_uso_cfdi_fe_imr_33'),
-                    formaPago: result.getText('custbody_forma_pago_fe_imr_33'),
-                    metodoPago: result.getText('custbody_fe_metodo_de_pago'),
+                    // Se leen desde el registro cargado (transaccionRecord), no desde el result del search:
+                    // en cash sale los campos custom no regresan en el mainline del search, pero sí en el record.
+                    razonSocial: mode === 'salesorder' ? razonSocial : (transaccionRecord.getValue('custbody_fe_razon_social') || razonSocial),
+                    // RFC receptor: prioridad al campo custbody_fe_rfc_cfdi_33, con respaldos.
+                    rfc: mode === 'salesorder' ? rfc : (transaccionRecord.getValue('custbody_fe_rfc_cfdi_33') || transaccionRecord.getValue('custbody_ce_rfc') || rfc),
+                    // Régimen y Uso son selects: el dropdown del portal usa el código SAT (ej. 601, G03),
+                    // así que tomamos el código inicial del texto mostrado ("601 General..." -> "601").
+                    regimenFiscal: (transaccionRecord.getText('custbodyimr_regimenfiscalreceptor') || '').split(' ')[0],
+                    usoCfdi: (transaccionRecord.getText('custbody_uso_cfdi_fe_imr_33') || '').split(' ')[0],
+                    formaPago: transaccionRecord.getText('custbody_forma_pago_fe_imr_33'),
+                    metodoPago: transaccionRecord.getText('custbody_fe_metodo_de_pago'),
                     domicilioFiscal: transaccionRecord.getText('billaddress'),
                     codigoPostalFiscal: transaccionRecord.getText('custbody_domiciliofiscalreceptor'),
                     lineItems: lineItems
