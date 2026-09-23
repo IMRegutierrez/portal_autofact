@@ -19,7 +19,11 @@ define(['N/email', 'N/log', 'N/runtime'],
                 value: '*' // O tu dominio de Amplify para mayor seguridad
             });
             scriptContext.response.setHeader({
-                name: 'Access-control-Allow-Headers',
+                name: 'Access-Control-Allow-Methods',
+                value: 'POST, OPTIONS'
+            });
+            scriptContext.response.setHeader({
+                name: 'Access-Control-Allow-Headers',
                 value: 'Content-Type'
             });
 
@@ -34,7 +38,22 @@ define(['N/email', 'N/log', 'N/runtime'],
 
             try {
                 if (scriptContext.request.method === 'POST') {
-                    const requestBody = JSON.parse(scriptContext.request.body);
+                    // Diagnóstico: registrar qué llega realmente en el cuerpo de la petición.
+                    const rawBody = scriptContext.request.body;
+                    log.audit('Reporte - cuerpo recibido', 'Longitud: ' + (rawBody ? String(rawBody).length : 0));
+
+                    // Guarda contra cuerpo vacío o no-JSON (evita el críptico "Unexpected end of JSON input").
+                    if (!rawBody || !String(rawBody).trim()) {
+                        throw new Error("La solicitud de reporte llegó sin cuerpo (body vacío). Revisa CORS/endpoint del portal.");
+                    }
+
+                    let requestBody;
+                    try {
+                        requestBody = JSON.parse(rawBody);
+                    } catch (parseError) {
+                        throw new Error("El cuerpo del reporte no es un JSON válido: " + String(rawBody).slice(0, 200));
+                    }
+
                     const { invoiceData, fiscalData, errorMessage, clientEmail } = requestBody;
 
                     if (!invoiceData || !fiscalData || !errorMessage) {
