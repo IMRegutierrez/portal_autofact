@@ -38,6 +38,7 @@ interface ClientConfig {
         showTotalAmount?: boolean;
         customFieldLabel?: string;
     };
+    autofillAddress?: boolean; // Preferencia: autollenar el Domicilio Fiscal (dirección). Default true.
 }
 
 const WIZARD_STEPS: Step[] = [
@@ -127,6 +128,17 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
     const activeCfdiLinks = stampedFiles.xmlUrl ? stampedFiles : searchCfdiLinks;
     const isLoading = isSearching || isStamping;
     const canAdvanceFromSearch = !!invoiceData && !invoiceData.isStamped;
+
+    // Datos fiscales prellenados. Si el cliente desactivó el autollenado de dirección,
+    // se omite domicilioFiscal para que el usuario lo capture manualmente.
+    const fiscalInitialData: Partial<FiscalDataInputs> = (() => {
+        if (!invoiceData) return {};
+        const data = { ...(invoiceData as any) } as Partial<FiscalDataInputs>;
+        if (config.autofillAddress === false) {
+            delete (data as any).domicilioFiscal;
+        }
+        return data;
+    })();
 
     // --- Handlers ---
     const handleSearchSubmit = (data: InvoiceSearchInputs) => {
@@ -277,7 +289,7 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
                     {currentStep === 2 && invoiceData && (
                         <FiscalDataForm
                             invoiceNumberForContext={invoiceData.invoiceNumber}
-                            initialData={invoiceData as Partial<FiscalDataInputs>}
+                            initialData={fiscalInitialData}
                             onSubmit={handleFiscalDataSubmit}
                             isLoading={isLoading}
                             theme={theme}

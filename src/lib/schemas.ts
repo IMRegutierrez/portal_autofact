@@ -55,6 +55,8 @@ export const ClientSchema = z.object({
     primaryFieldLabel: z.string().default("Ticket a facturar"),
     showTotalAmount: z.boolean().default(false)
   }).optional(),
+  // Preferencia: llenar automáticamente el campo Domicilio Fiscal (dirección). Default encendido.
+  autofillAddress: z.boolean().default(true),
 });
 
 export type InvoiceSearchInputs = z.infer<typeof InvoiceSearchSchema>;

@@ -8,13 +8,16 @@ import { useState } from 'react';
 export default function ClientForm({ initialData }: { initialData?: any }) {
     const router = useRouter();
     const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
-        defaultValues: initialData || {
-            isActive: true,
-            searchFieldsConfig: {
-                primaryFieldLabel: 'Ticket a facturar',
-                showTotalAmount: false
+        defaultValues: initialData
+            ? { ...initialData, autofillAddress: initialData.autofillAddress ?? true }
+            : {
+                isActive: true,
+                autofillAddress: true,
+                searchFieldsConfig: {
+                    primaryFieldLabel: 'Ticket a facturar',
+                    showTotalAmount: false
+                }
             }
-        }
     });
 
     const backgroundColor = watch("backgroundColor");
@@ -399,6 +402,17 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         />
                         <label htmlFor="showTotalAmount" className="ml-2 block text-sm text-gray-900">
                             Mostrar campo "Monto Total"
+                        </label>
+                    </div>
+                    <div className="sm:col-span-6 flex items-center">
+                        <input
+                            id="autofillAddress"
+                            type="checkbox"
+                            {...register("autofillAddress")}
+                            className="h-5 w-5 text-[#635Bff] focus:ring-[#635Bff] border-[#e5e7eb] rounded"
+                        />
+                        <label htmlFor="autofillAddress" className="ml-2 block text-sm text-gray-900">
+                            Llenar automáticamente el Domicilio Fiscal (dirección)
                         </label>
                     </div>
                 </div>
