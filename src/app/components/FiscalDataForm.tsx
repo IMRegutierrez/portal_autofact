@@ -43,7 +43,9 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
     const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     useEffect(() => {
-        setFormData(prev => ({ ...prev, ...initialData }));
+        // Se excluye domicilioFiscal del autollenado: la dirección la captura el cliente manualmente.
+        const { domicilioFiscal, ...rest } = (initialData || {}) as any;
+        setFormData(prev => ({ ...prev, ...rest }));
     }, [initialData]);
 
     // --- FUNCIÓN DE VALIDACIÓN DE RFC ---
