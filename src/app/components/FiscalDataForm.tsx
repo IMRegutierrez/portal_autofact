@@ -43,8 +43,8 @@ export default function FiscalDataForm({ invoiceNumberForContext, initialData, o
     const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     useEffect(() => {
-        // Se excluye domicilioFiscal del autollenado: la dirección la captura el cliente manualmente.
-        const { domicilioFiscal, ...rest } = (initialData || {}) as any;
+        // Se excluyen domicilioFiscal y codigoPostalFiscal del autollenado: el cliente los captura manualmente.
+        const { domicilioFiscal, codigoPostalFiscal, ...rest } = (initialData || {}) as any;
         setFormData(prev => ({ ...prev, ...rest }));
     }, [initialData]);
 
