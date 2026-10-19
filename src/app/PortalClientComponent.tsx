@@ -39,6 +39,7 @@ interface ClientConfig {
         customFieldLabel?: string;
     };
     autofillAddress?: boolean; // Preferencia: autollenar el Domicilio Fiscal (dirección). Default true.
+    autofillPostalCode?: boolean; // Preferencia: autollenar el Código Postal (receptor). Default true.
 }
 
 const WIZARD_STEPS: Step[] = [
@@ -136,6 +137,9 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         const data = { ...(invoiceData as any) } as Partial<FiscalDataInputs>;
         if (config.autofillAddress === false) {
             delete (data as any).domicilioFiscal;
+        }
+        if (config.autofillPostalCode === false) {
+            delete (data as any).codigoPostalFiscal;
         }
         return data;
     })();

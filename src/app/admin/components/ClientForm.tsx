@@ -9,10 +9,15 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
     const router = useRouter();
     const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
         defaultValues: initialData
-            ? { ...initialData, autofillAddress: initialData.autofillAddress ?? true }
+            ? {
+                ...initialData,
+                autofillAddress: initialData.autofillAddress ?? true,
+                autofillPostalCode: initialData.autofillPostalCode ?? true
+            }
             : {
                 isActive: true,
                 autofillAddress: true,
+                autofillPostalCode: true,
                 searchFieldsConfig: {
                     primaryFieldLabel: 'Ticket a facturar',
                     showTotalAmount: false
@@ -413,6 +418,17 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                         />
                         <label htmlFor="autofillAddress" className="ml-2 block text-sm text-gray-900">
                             Llenar automáticamente el Domicilio Fiscal (dirección)
+                        </label>
+                    </div>
+                    <div className="sm:col-span-6 flex items-center">
+                        <input
+                            id="autofillPostalCode"
+                            type="checkbox"
+                            {...register("autofillPostalCode")}
+                            className="h-5 w-5 text-[#635Bff] focus:ring-[#635Bff] border-[#e5e7eb] rounded"
+                        />
+                        <label htmlFor="autofillPostalCode" className="ml-2 block text-sm text-gray-900">
+                            Llenar automáticamente el Código Postal
                         </label>
                     </div>
                 </div>

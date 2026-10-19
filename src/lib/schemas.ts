@@ -57,6 +57,8 @@ export const ClientSchema = z.object({
   }).optional(),
   // Preferencia: llenar automáticamente el campo Domicilio Fiscal (dirección). Default encendido.
   autofillAddress: z.boolean().default(true),
+  // Preferencia: llenar automáticamente el campo Código Postal (receptor). Default encendido.
+  autofillPostalCode: z.boolean().default(true),
 });
 
 export type InvoiceSearchInputs = z.infer<typeof InvoiceSearchSchema>;
