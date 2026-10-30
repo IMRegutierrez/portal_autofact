@@ -222,7 +222,7 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                         log.error({ title: 'deployTimbre ', details: deployTimbre });
                         var suiteletURL = url.resolveScript({ scriptId: scriptTimbre, deploymentId: deployTimbre, returnExternalUrl: true });
                         suiteletURL += '&data=' + encode.convert({
-                            string: JSON.stringify({ "recordType": recordType, "recordId": invoiceOrCustomerId, "titleForm": "Factura Electrónica", "_fe_portal_cliente": "T" }),
+                            string: JSON.stringify({ "recordType": recordType, "recordId": invoiceOrCustomerId, "titleForm": "Factura Electrónica", "_fe_portal_cliente": "T", "notRedirect": "T" }),
                             inputEncoding: encode.Encoding.UTF_8,
                             outputEncoding: encode.Encoding.BASE_64
                         });
