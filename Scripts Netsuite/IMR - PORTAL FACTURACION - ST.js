@@ -226,11 +226,15 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             inputEncoding: encode.Encoding.UTF_8,
                             outputEncoding: encode.Encoding.BASE_64
                         });
+                        var pacResponseBody = '';
+                        var pacCallError = '';
                         try {
                             var response = https.get({ url: suiteletURL });
-                            log.error({ title: 'response ', details: response.body });
+                            pacResponseBody = (response && response.body) ? String(response.body) : '';
+                            log.audit({ title: 'Portal: respuesta PAC', details: pacResponseBody });
                         } catch (error) {
-                            log.error({ title: 'error', details: error });
+                            pacCallError = (error && error.message) ? error.message : String(error);
+                            log.error({ title: 'Portal: error en llamada al PAC', details: error });
                         }
 
                         var fieldFe = search.lookupFields({
@@ -317,7 +321,31 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
 
                         } else {
                             responseData.success = false;
-                            responseData.message = 'Error al timbrar: ' + fieldFe.custbody_fe_sf_mensaje_respuesta;
+
+                            // Obtener el detalle real del error con la mejor información disponible.
+                            var codigoResp = fieldFe.custbody_fe_sf_codigo_respuesta;
+                            var mensajeResp = fieldFe.custbody_fe_sf_mensaje_respuesta;
+                            var detalleError = '';
+                            if (mensajeResp) {
+                                detalleError = mensajeResp;
+                            } else if (pacCallError) {
+                                detalleError = 'No se pudo contactar al servicio de timbrado (' + pacCallError + ').';
+                            } else if (pacResponseBody) {
+                                // El PAC no escribió mensaje en la transacción: intentar extraerlo de su respuesta.
+                                try {
+                                    var parsedPac = JSON.parse(pacResponseBody);
+                                    detalleError = parsedPac.message || parsedPac.mensaje || parsedPac.error || pacResponseBody;
+                                } catch (eParse) {
+                                    detalleError = pacResponseBody;
+                                }
+                                detalleError = String(detalleError).replace(/\s+/g, ' ').trim().slice(0, 600);
+                            } else {
+                                detalleError = 'El servicio de timbrado no regresó un mensaje. Revisa la configuración del PAC para esta subsidiaria.';
+                            }
+
+                            log.error({ title: 'Portal: timbrado fallido', details: 'código=' + codigoResp + ' | mensaje="' + mensajeResp + '" | pacError="' + pacCallError + '" | pacBody=' + pacResponseBody });
+
+                            responseData.message = 'Error al timbrar' + (codigoResp ? ' (código ' + codigoResp + ')' : '') + ': ' + detalleError;
 
                             // Si la factura fue creada desde una OV y el timbrado falló,
                             // se elimina para no dejar facturas huérfanas sin timbrar.
