@@ -431,6 +431,17 @@ export default function ClientForm({ initialData }: { initialData?: any }) {
                             Llenar automáticamente el Código Postal
                         </label>
                     </div>
+                    <div className="sm:col-span-6 flex items-center">
+                        <input
+                            id="demoMode"
+                            type="checkbox"
+                            {...register("demoMode")}
+                            className="h-5 w-5 text-[#635Bff] focus:ring-[#635Bff] border-[#e5e7eb] rounded"
+                        />
+                        <label htmlFor="demoMode" className="ml-2 block text-sm text-gray-900">
+                            Modo demostración (timbrado simulado, no llama al PAC)
+                        </label>
+                    </div>
                 </div>
             </div>
 

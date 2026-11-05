@@ -40,6 +40,7 @@ interface ClientConfig {
     };
     autofillAddress?: boolean; // Preferencia: autollenar el Domicilio Fiscal (dirección). Default true.
     autofillPostalCode?: boolean; // Preferencia: autollenar el Código Postal (receptor). Default true.
+    demoMode?: boolean; // Timbrado simulado (demostración): no llama al PAC. Default false.
 }
 
 const WIZARD_STEPS: Step[] = [
@@ -74,7 +75,8 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         stampedFiles,
         setStampError
     } = useFiscalForm({
-        suiteletUrl: config.suiteletUrl
+        suiteletUrl: config.suiteletUrl,
+        demoMode: config.demoMode
     });
 
     // Paso actual del wizard (1..3)

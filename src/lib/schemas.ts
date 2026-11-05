@@ -59,6 +59,8 @@ export const ClientSchema = z.object({
   autofillAddress: z.boolean().default(true),
   // Preferencia: llenar automáticamente el campo Código Postal (receptor). Default encendido.
   autofillPostalCode: z.boolean().default(true),
+  // Modo demostración: simula el timbrado (no llama al PAC). Default apagado.
+  demoMode: z.boolean().default(false),
 });
 
 export type InvoiceSearchInputs = z.infer<typeof InvoiceSearchSchema>;

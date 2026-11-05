@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { FiscalDataInputs } from '../lib/schemas';
 import { readJsonResponse } from '../lib/http';
+import { buildDemoCfdi } from '../lib/demoCfdi';
 
 interface UseFiscalFormProps {
     suiteletUrl: string;
+    demoMode?: boolean; // Timbrado simulado para demostraciones (no llama al PAC).
 }
 
-export function useFiscalForm({ suiteletUrl }: UseFiscalFormProps) {
+export function useFiscalForm({ suiteletUrl, demoMode }: UseFiscalFormProps) {
     const [isStamping, setIsStamping] = useState(false);
     const [stampError, setStampError] = useState<string | null>(null);
     const [stampSuccess, setStampSuccess] = useState<string | null>(null);
@@ -17,6 +19,23 @@ export function useFiscalForm({ suiteletUrl }: UseFiscalFormProps) {
         setStampError(null);
         setStampSuccess(null);
         setStampedFiles({ xmlUrl: null, pdfUrl: null });
+
+        // Modo demostración: simula un timbrado exitoso y genera XML/PDF de ejemplo,
+        // sin tocar NetSuite ni el PAC. Solo para clientes marcados como demo.
+        if (demoMode) {
+            try {
+                await new Promise((resolve) => setTimeout(resolve, 1200));
+                const files = buildDemoCfdi(fiscalData, invoiceData);
+                setStampedFiles(files);
+                setStampSuccess('CFDI generado exitosamente (demostración).');
+                return true;
+            } catch (err: any) {
+                setStampError(err.message || 'Error al generar el CFDI de demostración.');
+                return false;
+            } finally {
+                setIsStamping(false);
+            }
+        }
 
         const formData = new FormData();
         formData.append('custpage_action', 'timbrar');
