@@ -350,6 +350,46 @@ define(['N/search', 'N/record', 'N/log', 'N/url', 'N/https', 'N/encode', 'N/file
                             // Si la factura fue creada desde una OV y el timbrado falló,
                             // se elimina para no dejar facturas huérfanas sin timbrar.
                             if (facturaCreadaDesdeOV) {
+                                // Capturar el diagnóstico ANTES de eliminar la factura (código, mensaje,
+                                // JSON del comprobante e IDs de archivos). Los archivos sobreviven a la
+                                // eliminación, así que sus IDs permiten recuperar el contenido después.
+                                try {
+                                    var diag = search.lookupFields({
+                                        type: record.Type.INVOICE,
+                                        id: invoiceOrCustomerId,
+                                        columns: [
+                                            'tranid',
+                                            'custbody_fe_sf_codigo_respuesta',
+                                            'custbody_fe_sf_mensaje_respuesta',
+                                            'custbody_file_json_fe_comprobante_33',
+                                            'custbody_fe_sf_xml_netsuite',
+                                            'custbody_json_fe_comprobante_33'
+                                        ]
+                                    });
+                                    log.error({
+                                        title: 'Portal: diagnóstico pre-eliminación (factura OV ' + invoiceOrCustomerId + ')',
+                                        details: JSON.stringify({
+                                            facturaId: invoiceOrCustomerId,
+                                            tranid: diag.tranid,
+                                            codigo: diag.custbody_fe_sf_codigo_respuesta,
+                                            mensaje: diag.custbody_fe_sf_mensaje_respuesta,
+                                            jsonCompFileId: diag.custbody_file_json_fe_comprobante_33,
+                                            xmlNetsuiteFileId: diag.custbody_fe_sf_xml_netsuite,
+                                            pacError: pacCallError,
+                                            pacBody: String(pacResponseBody).slice(0, 1500)
+                                        })
+                                    });
+                                    var jsonComprobante = diag.custbody_json_fe_comprobante_33 || '';
+                                    if (jsonComprobante) {
+                                        log.error({
+                                            title: 'Portal: JSON comprobante pre-eliminación (factura ' + invoiceOrCustomerId + ')',
+                                            details: String(jsonComprobante).slice(0, 3900)
+                                        });
+                                    }
+                                } catch (diagErr) {
+                                    log.error('Portal: no se pudo capturar diagnóstico antes de eliminar', invoiceOrCustomerId + ' - ' + diagErr.toString());
+                                }
+
                                 try {
                                     record.delete({ type: record.Type.INVOICE, id: invoiceOrCustomerId });
                                     log.audit('Portal: Factura eliminada por error de timbrado', 'Factura ID: ' + invoiceOrCustomerId);
