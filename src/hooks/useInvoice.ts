@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { InvoiceSearchInputs } from '../lib/schemas';
 import { readJsonResponse } from '../lib/http';
+import { isDemoErrorFolio, buildDemoErrorInvoice } from '../lib/demoCfdi';
 
 interface InvoiceData {
     internalId: string;
@@ -31,9 +32,10 @@ interface UseInvoiceProps {
     searchId?: string;
     searchMode?: 'invoice' | 'salesorder' | 'cashsale' | 'both' | 'all';
     searchField?: string;
+    demoMode?: boolean; // Habilita el escenario dummy de error (folios centinela).
 }
 
-export function useInvoice({ suiteletUrl, clientId, searchId, searchMode, searchField }: UseInvoiceProps) {
+export function useInvoice({ suiteletUrl, clientId, searchId, searchMode, searchField, demoMode }: UseInvoiceProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -60,6 +62,15 @@ export function useInvoice({ suiteletUrl, clientId, searchId, searchMode, search
         setInvoiceData(null);
         setError(null);
         setCfdiLinks({ xmlUrl: null, pdfUrl: null });
+
+        // Escenario dummy: en modo demo, los folios centinela "encuentran" una orden
+        // ficticia (sin llamar a NetSuite) que luego fallará al generar el CFDI.
+        if (demoMode && isDemoErrorFolio(data.invoiceOrCustomerId)) {
+            const dummy = buildDemoErrorInvoice(data.invoiceOrCustomerId);
+            setInvoiceData({ ...dummy, totalAmount: formatCurrency(dummy.totalAmount) });
+            setIsLoading(false);
+            return;
+        }
 
         const formData = new FormData();
         formData.append('custpage_invoice_id', data.invoiceOrCustomerId);

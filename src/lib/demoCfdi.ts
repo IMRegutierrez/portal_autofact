@@ -287,6 +287,42 @@ function buildDemoPdf(fd: Partial<FiscalDataInputs>, inv: any): string {
     return pdf;
 }
 
+// ====================== ESCENARIO DE ERROR (solo modo demo) ======================
+// Folios "centinela" inventados: al buscarlos en modo demo, el portal simula una
+// orden ficticia y luego FALLA al generar el CFDI, para demostrar el modal de error.
+export const DEMO_ERROR_SENTINELS = ['SO-ERROR', 'OC-ERROR', 'DEMO-ERROR', 'ERROR'];
+
+export function isDemoErrorFolio(folio: string | null | undefined): boolean {
+    const f = String(folio ?? '').trim().toUpperCase();
+    return DEMO_ERROR_SENTINELS.includes(f);
+}
+
+// Mensaje de error realista (estilo rechazo del PAC) para el escenario demo.
+export const DEMO_ERROR_MESSAGE =
+    'Error al timbrar: el PAC rechazó el comprobante. [Código 307] El RFC del receptor no se ' +
+    'encuentra en la lista de contribuyentes inscritos no cancelados (LRFC) del SAT, o los datos ' +
+    'fiscales no coinciden con la Constancia de Situación Fiscal. Verifique su información e intente nuevamente.';
+
+// Orden ficticia que se "encuentra" al buscar un folio centinela en modo demo.
+export function buildDemoErrorInvoice(folio: string): any {
+    const hoy = new Date().toLocaleDateString('es-MX');
+    return {
+        internalId: 'DEMO-ERR',
+        invoiceNumber: String(folio || 'SO-ERROR').trim().toUpperCase(),
+        customerId: 'DEMO',
+        recordType: 'salesorder',
+        customerName: 'CLIENTE DEMO (ESCENARIO DE ERROR)',
+        issueDate: hoy,
+        dueDate: hoy,
+        totalAmount: 5800, // el hook lo formatea como moneda
+        lineItems: [
+            { quantity: 1, item: 'Concepto de demostracion (escenario de error)', rate: 5000, amount: 5000 },
+        ],
+        isStamped: false,
+        __demoError: true, // bandera que dispara el error al generar el CFDI
+    };
+}
+
 /**
  * Genera XML y PDF de demostración y devuelve URLs de objeto (blob) para descargar.
  */

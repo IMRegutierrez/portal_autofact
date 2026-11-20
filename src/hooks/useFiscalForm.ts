@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FiscalDataInputs } from '../lib/schemas';
 import { readJsonResponse } from '../lib/http';
-import { buildDemoCfdi } from '../lib/demoCfdi';
+import { buildDemoCfdi, DEMO_ERROR_MESSAGE } from '../lib/demoCfdi';
 
 interface UseFiscalFormProps {
     suiteletUrl: string;
@@ -25,6 +25,12 @@ export function useFiscalForm({ suiteletUrl, demoMode }: UseFiscalFormProps) {
         if (demoMode) {
             try {
                 await new Promise((resolve) => setTimeout(resolve, 1200));
+                // Escenario dummy de error: si la orden ficticia trae la bandera,
+                // simulamos un rechazo del PAC para mostrar el modal de error.
+                if (invoiceData?.__demoError) {
+                    setStampError(DEMO_ERROR_MESSAGE);
+                    return false;
+                }
                 const files = buildDemoCfdi(fiscalData, invoiceData);
                 setStampedFiles(files);
                 setStampSuccess('CFDI generado exitosamente (demostración).');

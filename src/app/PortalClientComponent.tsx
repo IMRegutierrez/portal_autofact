@@ -64,7 +64,8 @@ export default function PortalClientComponent({ config }: { config: ClientConfig
         clientId: config.clientId,
         searchId: config.searchId,
         searchMode: config.searchMode,
-        searchField: config.searchField
+        searchField: config.searchField,
+        demoMode: config.demoMode
     });
 
     const {
